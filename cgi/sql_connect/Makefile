@@ -1,0 +1,17 @@
+
+CURR_PATH=$(shell pwd)
+LIB=$(CURR_PATH)/../../lib
+INCLUDE=$(LIB)/include
+MYSQL_LIB=$(LIB)/lib -lmysqlclient -lssl -lcrypto
+.PHONY: all
+all: save_img get_id
+
+save_img: save_img.c
+	gcc -g -o $@ $^ -I$(INCLUDE) -L$(MYSQL_LIB)  
+get_id: get_id.c
+	gcc -g -o $@ $^ -I$(INCLUDE) -L$(MYSQL_LIB)  
+
+
+.PHONY: clean
+clean:
+	rm -f save_img get_id

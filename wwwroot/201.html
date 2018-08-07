@@ -1,0 +1,121 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+
+<link href="css/bootstrap.css" rel='stylesheet' type='text/css' />
+<!-- jQuery (Bootstrap's JavaScript plugins) -->
+<script src="js/jquery.min.js"></script>
+<!-- Custom Theme files -->
+<link href="css/style.css" rel="stylesheet" type="text/css" media="all" />
+<!-- Custom Theme files -->
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="keywords" content="Pixelx  Responsive web template, Bootstrap Web Templates, Flat Web Templates, Andriod Compatible web template, 
+Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, SonyErricsson, Motorola web design" />
+<script type="application/x-javascript"> addEventListener("load", function() { setTimeout(hideURLbar, 0); }, false); function hideURLbar(){ window.scrollTo(0,1); } </script>
+
+<!--animated-css-->
+<link href="css/animate.css" rel="stylesheet" type="text/css" media="all">
+<script src="js/wow.min.js"></script>
+<script>
+ new WOW().init();	
+</script>
+<!--/animated-css-->
+<!--script-->
+<script type="text/javascript" src="js/move-top.js"></script>
+<script type="text/javascript" src="js/easing.js"></script>
+<!--/script-->
+<script type="text/javascript">
+			jQuery(document).ready(function($) {
+				$(".scroll").click(function(event){		
+					event.preventDefault();
+					$('html,body').animate({scrollTop:$(this.hash).offset().top},900);
+				});
+			});
+</script>
+
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<link href="css/bootstrap-fileinput.css" rel="stylesheet">
+
+</head>
+<body>
+<div class="banner">
+	<div class="container">
+		<div class="header">
+			 <div class="logo wow fadeInLeft" data-wow-delay="0.5s">
+				<h1>哈喽图床</h1>
+			 </div>
+			 <div class="top-menu">
+				 <span class="menu"></span> 
+				 <ul>
+					 <li><a class="scroll" href="#home">上传</a></li>	 
+					 <li><a class="scroll" href="#pricing">登录</a></li>
+					 <li><a class="scroll" href="#screenshots">注册账户</a></li>
+					 <li><a class="scroll" href="#testimonial">关于</a></li>
+					
+				 </ul>
+			 </div>
+			 <div class="clearfix"></div>
+		</div>	
+	</div>
+    <div class="banner-text wow fadeInUp" data-wow-delay="0.5s">
+		<h1><span>上传 </span>与 <span>分享</span> <label>您的图片</label></h1>
+	<!--	
+		<div class="page-header">
+	-->		
+			<div class="banner-form">
+				<form name="uploadForm" id="uploadForm" method="post" enctype="multipart/form-data" action = "#">
+<input class="wow fadeInRight" data-wow-delay="0.5s" type="text" value=""/>
+				<h2>Get URL</h2>
+				</form>
+			</div>	
+	<!--		
+		</div>
+	-->
+	</div>
+</div>
+
+<script src="js/jquery.min.js"></script>
+<script src="js/bootstrap-fileinput.js"></script>
+<script type="text/javascript">
+    $(function () {
+        //比较简洁，细节可自行完善
+        $('#uploadSubmit').click(function () {
+            var data = new FormData($('#uploadForm')[0]);
+            $.ajax({
+                url: 'xxx/xxx',
+                type: 'POST',
+                data: data,
+                async: false,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function (data) {
+                    console.log(data);
+                    if(data.status){
+                        console.log('upload success');
+                    }else{
+                        console.log(data.message);
+                    }
+                },
+                error: function (data) {
+                    console.log(data.status);
+                }
+            });
+        });
+
+    })
+</script>
+
+<div class="footer">
+	<div class="container">
+		<div class="ftr-logo">
+			<h1>哈喽图床</h1>
+		</div>
+		<div class="copy-right wow bounceInUp" data-wow-delay="0.5s">
+		<p>适用浏览器：360、FireFox、Chrome、Opera、傲游、搜狗、世界之窗. 不支持Safari、IE8及以下浏览器。</p>
+		</div>	 
+	</div>
+</div>
+</body>
+</html>
