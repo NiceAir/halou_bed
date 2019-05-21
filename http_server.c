@@ -12,7 +12,7 @@
 #include<arpa/inet.h>
 #include<fcntl.h>
 #define PORT 9999
-#define MAX_WAIT 20
+#define MAX_EVENTS 30
 #define MAX_COLS 1024
 #define HOME_PAGE "index.html"
 #define PAGE_400 "wwwroot/400.html"
@@ -787,9 +787,9 @@ int main(int argc, char *argv[])
 		return 2;
 	}
 	struct sockaddr_in local;
-	local.sin_family = AF_INET;
-	local.sin_port = htons(PORT);
-	local.sin_addr.s_addr = INADDR_ANY;
+	local.sin_family = AF_INET;   //类型
+	local.sin_port = htons(PORT);  //端口号
+	local.sin_addr.s_addr = INADDR_ANY;  //ip地址
 	if(set_noblock(sock) < 0)
 	{
 		perror("fcntl");
@@ -809,20 +809,20 @@ int main(int argc, char *argv[])
 		return 4;
 	}
 	haxiInit(&head_haxi, 10);
-	imgid = getId();
+//	imgid = getId();
 	printf("初始化获得imgid：%d, 睡3秒\n", imgid);
 	sleep(3);
-	int epfd = epoll_create(10);
+	int epfd = epoll_create(MAX_EVENTS);
 	struct epoll_event event;
 	event.events = EPOLLIN | EPOLLET;
 	event.data.fd = sock;
 	epoll_ctl(epfd, EPOLL_CTL_ADD, sock, &event);	
 	
-	struct epoll_event events[MAX_WAIT];
+	struct epoll_event events[MAX_EVENTS-1];
 	int timeout = 1000;
 	while(1)
 	{
-		int size = epoll_wait(epfd, events, MAX_WAIT, timeout);
+		int size = epoll_wait(epfd, events, MAX_EVENTS-1, timeout);
 		if(size < 0)
 		{
 			perror("epoll_wait");
