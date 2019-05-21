@@ -215,7 +215,7 @@ void clear_header(int sock)
 	}while(strcmp(line, "\n") != 0);
 }
 
-int saveImg(int sock, char *length, char *url, int urllen, int imgid, char *type)
+int saveImg(int sock, char *length, char *url, int urllen, char *type)
 {
 	int status = 200;
 	int output[2];
@@ -229,10 +229,10 @@ int saveImg(int sock, char *length, char *url, int urllen, int imgid, char *type
 		char *boundary = NULL;
 		strtok(type, "=");
 		boundary = strtok(NULL, "=");
-		sprintf(s, "sock=%d&length=%s&imgid=%d&boundary=%s", sock, length, imgid, boundary);
+		sprintf(s, "sock=%d&length=%s&boundary=%s", sock, length, boundary);
 		printf("```````````````s:%s``````````````\n", s);
 		close(output[0]);
-		dup2(output[1], 1);
+		dup2(output[1], 1);    //将标准输出重定向为写管道。进程映像替换之后printf的内容就写到了写管道当中
 		execl("/home/ly/study/Linux/net/http/cgi/sql_connect/save_img", "/home/ly/study/Linux/net/http/cgi/sql_connect/save_img", s, NULL);
 		perror("execl失败");
 		exit(500);
@@ -387,7 +387,8 @@ void handler_request(int epfd, int sock)
 		clear_header(sock);
 		//post 接收正文部分中图片的数据并存入数据库，同时把imgid拿到
 		printf("图片存入前，url=%s\n", url);
-		saveImg(sock, content_length, url, sizeof(url), imgid+1, type);
+//		saveImg(sock, content_length, url, sizeof(url), imgid+1, type);
+		saveImg(sock, content_length, url, sizeof(url), type);
 		if(strlen(url) == 0)
 		{
 			status_code = 500;

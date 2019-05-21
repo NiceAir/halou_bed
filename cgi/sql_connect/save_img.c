@@ -42,6 +42,38 @@ int get_line(int sock, char buf[], int cols, int *cl)
 	return count;
 }
 
+int get_maxid()
+{
+	MYSQL *sqlfd = mysql_init(NULL);
+	if(mysql_real_connect(sqlfd, "127.0.0.1", "root", "123", "halou_bed", 3306, NULL, 0) == NULL)
+	{
+    	mysql_close(sqlfd);
+		return -1;
+	}
+	char sql[1024] = {0};
+    sprintf(sql, "select MAX(id) from image");
+	if(mysql_query(sqlfd, sql) < 0)
+	{
+  		mysql_close(sqlfd);
+		return -1;
+	}
+    MYSQL_RES *res = mysql_store_result(sqlfd);
+    if(res == NULL)
+    {
+    	mysql_close(sqlfd);
+		return -1;
+    }
+    MYSQL_ROW line;
+    line = mysql_fetch_row(res);
+    if(line[0] == NULL)
+    {
+    	mysql_close(sqlfd);
+		return -1;
+    }
+    int maxid = atoi(line[0]);
+	return maxid;
+}
+
 int  get_type_from_head(int sock, char *type, int type_len, char *boundary, int *cl)
 {
 	char line[10240];
@@ -80,6 +112,7 @@ int  get_type_from_head(int sock, char *type, int type_len, char *boundary, int 
 
 	return num;
 }
+
 int main(int argc, char *argv[])
 {
 	int status_code = 500;
@@ -88,17 +121,16 @@ int main(int argc, char *argv[])
 	strtok(NULL, "=&");
 	int length = atoi(strtok(NULL, "=&"));
 	strtok(NULL, "=&");
-	char *imgid  = strtok(NULL, "=&");
-	strtok(NULL, "=&");
+//	char *imgid  = strtok(NULL, "=&");
+//	strtok(NULL, "=&");
 	char *boundary = strtok(NULL, "=&");
 	char type[20] = {0};
 	int cl = 1;  //传入get_len中取得换行符所占的字节数
 	int num =  0;
 	num = get_type_from_head(sock, type, sizeof(type), boundary, &cl);
 	char path[1024] = IMGPATH;
-	strcat(path, imgid);
-	strcat(path, type);	
-	int head_len = num+strlen(boundary)+1+2+4*(cl-1);
+    char imgname[40] = {0};
+		int head_len = num+strlen(boundary)+1+2+4*(cl-1);
 	int body_len = length - (num+2*strlen(boundary) + 4*(cl-1)+2*cl+1+2*3); 
 	int tail_len = strlen(boundary) + 2*2 + 2*cl; 
 	num += 2*strlen(boundary);	
@@ -124,7 +156,28 @@ int main(int argc, char *argv[])
 			count++;
 		}
 	}
+	int maxid = get_maxid();
+	if(maxid == -1)
+	{
+		goto end;
+	}
+    char imgid[20] = {0}; 
+	strcat(imgid, itoa(maxid + 1));
 
+    strcat(imgname, "baobao");
+    int i = 0;
+    for(i; i<strlen(imgid); i++)
+    {
+        imgid[i] += 'a';
+    }
+    strcat(imgname, imgid);
+    strcat(imgname, "xiangni");
+    for(i = 0; i<strlen(imgname); i++)
+    {
+        imgname[i] += 5; 
+    }
+	strcat(imgname, type);
+	strcat(path, imgid);
 	int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if(fd < 0)
 	{
@@ -142,20 +195,19 @@ int main(int argc, char *argv[])
 	}
 
 	MYSQL *sqlfd = mysql_init(NULL);
-	if(mysql_real_connect(sqlfd, "127.0.0.1", "root", "123", "halou_bed", 3306, NULL, 0) == NULL)
-	{
-		goto end;
-	}
+	
 	char sql[1024] = {0};
-	sprintf(sql, "insert into %s values(NULL, '%s', %s)", TABLE, path, imgid);
+
+	//这里的path是图片在服务器上的绝对路径
+	sprintf(sql, "insert into %s values(NULL, '%s')", TABLE, path);
 	if(mysql_query(sqlfd, sql) < 0)
 	{
+		mysql_close(sqlfd);
 		goto end;
 	}
 	status_code = 200;
 end:	
-	//这里要给相对于项目根目录的相对路径而不是相对于本程序的相对路径
-	mysql_close(sqlfd);
+	//返回给父进程该图片的路径和状态码即可
 	printf("%s&%d", path, status_code);
 	fflush(stdout);
 	exit(0);
