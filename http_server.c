@@ -789,7 +789,8 @@ int main(int argc, char *argv[])
 	struct sockaddr_in local;
 	local.sin_family = AF_INET;   //类型
 	local.sin_port = htons(PORT);  //端口号
-	local.sin_addr.s_addr = INADDR_ANY;  //ip地址
+//	local.sin_addr.s_addr = INADDR_ANY;  //ip地址
+	local.sin_addr.s_addr = inet_addr("192.168.43.67");  //ip地址
 	if(set_noblock(sock) < 0)
 	{
 		perror("fcntl");
@@ -834,6 +835,7 @@ int main(int argc, char *argv[])
 		else
 		{
 			handler_events(epfd, events, size, sock);
+			printf("触发\n");
 		}
 
 	}
