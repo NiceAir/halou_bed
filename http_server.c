@@ -231,15 +231,16 @@ int saveImg(int sock, char *length, char *url, int urllen, char *type)
 		boundary = strtok(NULL, "=");
 		sprintf(s, "sock=%d&length=%s&boundary=%s", sock, length, boundary);
 		printf("```````````````s:%s``````````````\n", s);
-		close(output[0]);
-		dup2(output[1], 1);    //将标准输出重定向为写管道。进程映像替换之后printf的内容就写到了写管道当中
-		execl("/home/ly/study/Linux/net/http/cgi/sql_connect/save_img", "/home/ly/study/Linux/net/http/cgi/sql_connect/save_img", s, NULL);
+//		close(output[0]);
+//		dup2(output[1], 1);    //将标准输出重定向为写管道。进程映像替换之后printf的内容就写到了写管道当中
+		execl("cgi/sql_connect/save_img", "cgi/sql_connect/save_img", s, NULL);
 		perror("execl失败");
 		exit(500);
 	}
 	close(output[1]);
 	memset(url, 0x00, urllen);
 	char c;
+	wait();
 	ssize_t s = read(output[0], url, urllen);
 	url[s] = 0;
 	printf("save_img retuen value is %s\n", url);
@@ -255,7 +256,6 @@ int saveImg(int sock, char *length, char *url, int urllen, char *type)
 		}
 	}
 	
-	wait();
 	if(code == 500)
 		status = 500;
 	close(output[0]);

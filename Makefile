@@ -1,12 +1,12 @@
 .PHONY: all cgi
-all: http_server
+all: http_server cgi
 
 http_server: http_server.c
 	gcc -o $@ $^ -g
 
-.PHONY: cgi
+#.PHONY: cgi
 cgi:
-	cd cgi; make;cd -
+	cd cgi/sql_connect; make;cd -
 
 clean:
 	rm -f http_server

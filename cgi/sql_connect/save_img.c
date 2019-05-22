@@ -16,6 +16,8 @@ char img_type[][10] = {
 	{".jpg"},
 	{".png"}};
 
+char key[27] = "qwertyuiopasdfghjklzxcvbnm";  //加密密匙
+
 int get_line(int sock, char buf[], int cols, int *cl)
 {
 	int count = 0;
@@ -42,7 +44,7 @@ int get_line(int sock, char buf[], int cols, int *cl)
 	return count;
 }
 
-int get_maxid()
+int get_imgid(char *imgid, int len)
 {
 	MYSQL *sqlfd = mysql_init(NULL);
 	if(mysql_real_connect(sqlfd, "127.0.0.1", "root", "123", "halou_bed", 3306, NULL, 0) == NULL)
@@ -71,7 +73,9 @@ int get_maxid()
 		return -1;
     }
     int maxid = atoi(line[0]);
-	return maxid;
+    mysql_close(sqlfd);
+	sprintf(imgid, "%d\0", maxid+1);
+	return 0;
 }
 
 int  get_type_from_head(int sock, char *type, int type_len, char *boundary, int *cl)
@@ -135,7 +139,6 @@ int main(int argc, char *argv[])
 	int tail_len = strlen(boundary) + 2*2 + 2*cl; 
 	num += 2*strlen(boundary);	
 	num += 4*(cl-1) + 2*3 + 1 + 2*cl;
-	fflush(stdout);
 	char c;
 	int count = 0;
 
@@ -156,28 +159,36 @@ int main(int argc, char *argv[])
 			count++;
 		}
 	}
-	int maxid = get_maxid();
-	if(maxid == -1)
+
+    char imgid[21] = {0};
+	int res = get_imgid(imgid, 20);
+	if(res == -1)
 	{
 		goto end;
 	}
-    char imgid[20] = {0}; 
-	strcat(imgid, itoa(maxid + 1));
 
-    strcat(imgname, "baobao");
     int i = 0;
-    for(i; i<strlen(imgid); i++)
+    strcat(imgname, "baobao");
+	printf("imgid is %s\n", imgid);
+	printf("strlen(imgid) is %d\n", strlen(imgid));
+    for(i = 0; i<strlen(imgid); i++)
     {
-        imgid[i] += 'a';
+        imgid[i] += ('a' - '0');
     }
+	printf("imgid + 'a' is: %s\n", imgid);
     strcat(imgname, imgid);
     strcat(imgname, "xiangni");
+	printf("imgname1 is: %s\n", imgname);
     for(i = 0; i<strlen(imgname); i++)
     {
-        imgname[i] += 5; 
+		imgname[i] = key[imgname[i] - 'a'];
     }
 	strcat(imgname, type);
-	strcat(path, imgid);
+	printf("path1 is: %s\n", path);
+	strcat(path, imgname);
+	printf("imgname2 is: %s\n", imgname);
+	printf("path2 is: %s\n", path);
+	fflush(stdout);
 	int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if(fd < 0)
 	{
@@ -195,16 +206,21 @@ int main(int argc, char *argv[])
 	}
 
 	MYSQL *sqlfd = mysql_init(NULL);
-	
+	if(mysql_real_connect(sqlfd, "127.0.0.1", "root", "123", "halou_bed", 3306, NULL, 0) == NULL)
+	{
+    	mysql_close(sqlfd);
+		goto end;
+	}
 	char sql[1024] = {0};
 
-	//这里的path是图片在服务器上的绝对路径
-	sprintf(sql, "insert into %s values(NULL, '%s')", TABLE, path);
+	//这里的path是图片在服务器上的相对路径
+	sprintf(sql, "insert into %s(path, user_id) values('%s', %d)", TABLE, path, 0);
 	if(mysql_query(sqlfd, sql) < 0)
 	{
 		mysql_close(sqlfd);
 		goto end;
 	}
+	mysql_close(sqlfd);
 	status_code = 200;
 end:	
 	//返回给父进程该图片的路径和状态码即可
