@@ -12,6 +12,7 @@
 #include<arpa/inet.h>
 #include<fcntl.h>
 #define PORT 9999
+#define IP "192.168.1.103"
 #define MAX_EVENTS 30
 #define MAX_COLS 1024
 #define HOME_PAGE "index.html"
@@ -231,8 +232,8 @@ int saveImg(int sock, char *length, char *url, int urllen, char *type)
 		boundary = strtok(NULL, "=");
 		sprintf(s, "sock=%d&length=%s&boundary=%s", sock, length, boundary);
 		printf("```````````````s:%s``````````````\n", s);
-//		close(output[0]);
-//		dup2(output[1], 1);    //将标准输出重定向为写管道。进程映像替换之后printf的内容就写到了写管道当中
+		close(output[0]);
+		dup2(output[1], 1);    //将标准输出重定向为写管道。进程映像替换之后printf的内容就写到了写管道当中
 		execl("cgi/sql_connect/save_img", "cgi/sql_connect/save_img", s, NULL);
 		perror("execl失败");
 		exit(500);
@@ -243,7 +244,6 @@ int saveImg(int sock, char *length, char *url, int urllen, char *type)
 	wait();
 	ssize_t s = read(output[0], url, urllen);
 	url[s] = 0;
-	printf("save_img retuen value is %s\n", url);
 	int i = 0;
 	int code = 200;
 	for(i = 0; i<strlen(url); i++)
@@ -259,7 +259,7 @@ int saveImg(int sock, char *length, char *url, int urllen, char *type)
 	if(code == 500)
 		status = 500;
 	close(output[0]);
-	printf("分解后的值为 %s   %d\n", url, code);
+	printf("获得cgi处理结果：url= %s  code= %d\n", url, code);
 	return status;
 }
 
@@ -508,8 +508,11 @@ int echo_www(int sock, char *path, int status_code)
 void echo_www_url(int sock, char *path)
 {
 	char line[4096];
-	char source[40] = {0};
-	sprintf(source, "http://192.168.85.129:9999/%s", path+7);
+	char source[50] = {0};
+	printf("path: %s\n", path);
+	sprintf(source, "http://%s:%d/%s", IP, PORT, path+7);
+	printf("path: %s\n", path);
+	printf("source: %s\n", source);
 	int source_len = strlen(source);
 	sprintf(line, "HTTP/1.0 200 OK\r\n");
 	write(sock, line, strlen(line));
@@ -663,7 +666,6 @@ void handler_response(int epfd, int sock)
 		}
 		else
 			cgi = 1;
-		
 	}
 	else //其它方法
 	{}
@@ -791,7 +793,7 @@ int main(int argc, char *argv[])
 	local.sin_family = AF_INET;   //类型
 	local.sin_port = htons(PORT);  //端口号
 //	local.sin_addr.s_addr = INADDR_ANY;  //ip地址
-	local.sin_addr.s_addr = inet_addr("192.168.43.67");  //ip地址
+	local.sin_addr.s_addr = inet_addr(IP);  //ip地址
 	if(set_noblock(sock) < 0)
 	{
 		perror("fcntl");

@@ -169,26 +169,26 @@ int main(int argc, char *argv[])
 
     int i = 0;
     strcat(imgname, "baobao");
-	printf("imgid is %s\n", imgid);
-	printf("strlen(imgid) is %d\n", strlen(imgid));
+//	printf("imgid is %s\n", imgid);
+//	printf("strlen(imgid) is %d\n", strlen(imgid));
     for(i = 0; i<strlen(imgid); i++)
     {
         imgid[i] += ('a' - '0');
     }
-	printf("imgid + 'a' is: %s\n", imgid);
+//	printf("imgid + 'a' is: %s\n", imgid);
     strcat(imgname, imgid);
     strcat(imgname, "xiangni");
-	printf("imgname1 is: %s\n", imgname);
+//	printf("imgname1 is: %s\n", imgname);
     for(i = 0; i<strlen(imgname); i++)
     {
 		imgname[i] = key[imgname[i] - 'a'];
     }
 	strcat(imgname, type);
-	printf("path1 is: %s\n", path);
+//	printf("path1 is: %s\n", path);
 	strcat(path, imgname);
-	printf("imgname2 is: %s\n", imgname);
-	printf("path2 is: %s\n", path);
-	fflush(stdout);
+//	printf("imgname2 is: %s\n", imgname);
+//	printf("path2 is: %s\n", path);
+//	fflush(stdout);
 	int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if(fd < 0)
 	{
