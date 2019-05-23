@@ -1,5 +1,5 @@
-.PHONY: all cgi
-all: http_server cgi
+.PHONY: all cgi 
+all: http_server cgi filemode 
 
 http_server: http_server.c
 	gcc -o $@ $^ -g
@@ -11,4 +11,10 @@ cgi:
 clean:
 	rm -f http_server
 	cd cgi; make clean;cd -
+
+filemode:
+	cd wwwroot/; pwd; chmod a-x *.html;cd - 
+	cd wwwroot/css/; pwd; chmod a-x *.css;cd -
+	cd wwwroot/js; pwd; chmod a-x *.js;cd -;
+	cd wwwroot/images; pwd; chmod a-x *;cd -;
 	

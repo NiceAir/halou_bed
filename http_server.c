@@ -12,7 +12,7 @@
 #include<arpa/inet.h>
 #include<fcntl.h>
 #define PORT 9999
-#define IP "192.168.1.103"
+#define IP "192.168.1.105"
 #define MAX_EVENTS 30
 #define MAX_COLS 1024
 #define HOME_PAGE "index.html"
@@ -655,6 +655,7 @@ void handler_response(int epfd, int sock)
 		if(strcmp(query_string, "\0") != 0)    //get方法带参数，即要执行服务器程序
 		{
 			cgi = 1;
+			printf("get、cgi=1：method: %s    url: %s    query_string: %s    id: %d    status_code: %d    sock:%d    close:%d\n", method, url, query_string, id, status_code, sock, clos);
 		}
 	}
 	else if(strcasecmp(method, "post") == 0) //post方法
