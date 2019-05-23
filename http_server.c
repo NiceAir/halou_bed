@@ -344,6 +344,7 @@ void handler_request(int epfd, int sock)
 	{
 		//post方法，取head中的正文长度字段
 	//	get_line(sock, line, sizeof(line));    //host
+		printf("method: %s    url: %s    query_string: %s    id: %d    status_code: %d\n", method, url, query_string, id, status_code);
 		char type[200] = {0};
 		int sign = 2;
 		int cl = 0;
@@ -385,18 +386,29 @@ void handler_request(int epfd, int sock)
 			goto set;		
 		}
 		clear_header(sock);
-		//post 接收正文部分中图片的数据并存入数据库，同时把imgid拿到
-		printf("图片存入前，url=%s\n", url);
-//		saveImg(sock, content_length, url, sizeof(url), imgid+1, type);
-		saveImg(sock, content_length, url, sizeof(url), type);
-		if(strlen(url) == 0)
+		if(strcmp(url, "/save") == 0)  //存图片
 		{
-			status_code = 500;
-			printf("url为空\n");
-			goto set;
+			//post 接收正文部分中图片的数据并存入数据库，同时把imgid拿到
+			printf("图片存入前，url=%s\n", url);
+			saveImg(sock, content_length, url, sizeof(url), type);
+			if(strlen(url) == 0)
+			{
+				status_code = 500;
+				printf("url为空\n");
+				goto set;
+			}
+			printf("图片已存入, 此时url=%s\n", url);
 		}
-		printf("图片已存入, 此时url=%s\n", url);
-		id = imgid++;
+		else if(strcmp(url, "/log_about/register") == 0) //注册
+		{
+		}
+		else if(strcmp(url, "/log_about/login") == 0) //登录
+		{
+		}
+		else   //POST 的url未知，返回404页面
+		{
+			
+		}
 	}
 	else //other method
 	{}
@@ -711,7 +723,10 @@ void handler_response(int epfd, int sock)
 		else if(st.st_mode & S_IXUSR ||
 				st.st_mode & S_IXGRP ||
 				st.st_mode & S_IXOTH)
+		{
 			cgi = 1;
+			printf("文件%s具有可执行属性\n", path);
+		}
 		else
 		{
 			//do_nothing

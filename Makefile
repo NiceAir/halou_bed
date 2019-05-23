@@ -17,4 +17,5 @@ filemode:
 	cd wwwroot/css/; pwd; chmod a-x *.css;cd -
 	cd wwwroot/js; pwd; chmod a-x *.js;cd -;
 	cd wwwroot/images; pwd; chmod a-x *;cd -;
+	cd wwwroot/log_about; pwd; chmod a-x *.html;cd -;
 	
