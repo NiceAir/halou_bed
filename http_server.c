@@ -262,23 +262,52 @@ int saveImg(int sock, char *length, char *url, int urllen, char *type)
 	return status;
 }
 
+/*
+s: 缓存区 slen：缓存区的大小
+length: 需要读取的字节数
+
+ */
+void readbtyes(int sock, char *s,int slen, int length)
+{
+	int count = 0;
+	while(count < length)
+	{
+		char c;
+		ssize_t ss = read(sock, &c, 1);
+		if(ss < 0)
+		{
+			if(errno == EAGAIN || errno == EWOULDBLOCK)
+				continue;
+		}
+		else
+		{
+			s[count] = c;
+			count++;
+		}
+		if(count >= slen)
+			break;
+	}
+}
 int userRegister(int sock, char *content_length, char *url, int urllen)
 {
 	int status = 200;
 	int output[2];
-	pipe[output];
+	
+	pipe(output);
 	pid_t pid = fork();
 	if(pid < 0)
 	{
 		return 500;
 	}
-	if(pid == 0)
+	if(pid == 0) //子进程
 	{
 		char s[200] = {0};
-		sprintf(s, "sock=%d&length=%s", sock, content_length);
+		readbtyes(sock, s, 200, atoi(content_length));
+		printf("s is %s\n", s);
 		close(output[0]);
 		dup2(output[1], 1);
-		execl();
+		chdir("cgi/sql_connect");
+    	execl("sh/register.sh", "sh/register.sh" , s, NULL);
 		perror("execl 失败");
 		exit(500);
 	}
@@ -286,8 +315,12 @@ int userRegister(int sock, char *content_length, char *url, int urllen)
 	memset(url, 0x00, urllen);
 	char c;
 	wait();
-	ssize_t s = read(output[0], url, urllen);
-	url[s] = 0;
+//	ssize_t s = read(output[0], url, urllen);
+//	url[s] = 0;
+	char *res[400] = {0};
+	ssize_t s = read(output[0], res, 400);
+	res[s] = 0;
+	printf("cgi执行结果：%s\n", res);
 	int i = 0;
 	int code = 200;
 	for(i = 0; i<strlen(url); i++)
