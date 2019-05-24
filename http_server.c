@@ -20,7 +20,6 @@
 #define PAGE_404 "wwwroot/404.html"
 #define PAGE_500 "wwwroot/500.html"
 #define PAGE_201 "wwwroot/201.html"
-#define SAVE "/save"
 char response_head[][40] = {
 						{"200 OK\r\n"},         			// 0
 						{"400 Bad Request\r\n"},			// 1
@@ -263,6 +262,51 @@ int saveImg(int sock, char *length, char *url, int urllen, char *type)
 	return status;
 }
 
+int userRegister(int sock, char *content_length, char *url, int urllen)
+{
+	int status = 200;
+	int output[2];
+	pipe[output];
+	pid_t pid = fork();
+	if(pid < 0)
+	{
+		return 500;
+	}
+	if(pid == 0)
+	{
+		char s[200] = {0};
+		sprintf(s, "sock=%d&length=%s", sock, content_length);
+		close(output[0]);
+		dup2(output[1], 1);
+		execl();
+		perror("execl 失败");
+		exit(500);
+	}
+	close(output[1]);
+	memset(url, 0x00, urllen);
+	char c;
+	wait();
+	ssize_t s = read(output[0], url, urllen);
+	url[s] = 0;
+	int i = 0;
+	int code = 200;
+	for(i = 0; i<strlen(url); i++)
+	{
+		if(url[i] == '&')
+		{
+			url[i] = '\0';
+			code = atoi(url+i+1);
+			break;
+		}
+	}
+	
+	if(code == 500)
+		status = 500;
+	close(output[0]);
+	printf("获得cgi处理结果：url= %s  code= %d\n", url, code);
+	return status;
+}
+
 int getId()
 {
 	int id = -1;
@@ -295,6 +339,7 @@ int getId()
 	}
 	return id;
 }
+
 
 void handler_request(int epfd, int sock)
 {
@@ -380,11 +425,11 @@ void handler_request(int epfd, int sock)
 			status_code = 400;
 			goto set;
 		}
-		if(strcmp(url, SAVE) != 0)
-		{
-			status_code = 400;
-			goto set;		
-		}
+	//	if(strcmp(url, SAVE) != 0)
+	//	{
+	//		status_code = 400;
+	//		goto set;		
+	//	}
 		clear_header(sock);
 		if(strcmp(url, "/save") == 0)  //存图片
 		{
@@ -398,20 +443,27 @@ void handler_request(int epfd, int sock)
 				goto set;
 			}
 			printf("图片已存入, 此时url=%s\n", url);
+			id = imgid++;
 		}
 		else if(strcmp(url, "/log_about/register") == 0) //注册
 		{
+			printf("进行注册，sock=%d, url=%s, content_length=%s, type=%s\n", sock, url, content_length, type);
+			userRegister(sock, content_length, url, sizeof(url));
 		}
 		else if(strcmp(url, "/log_about/login") == 0) //登录
 		{
+			printf("用户登录，sock=%d, url=%s, content_length=%s, type=%s\n", sock, url, content_length, type);
 		}
 		else   //POST 的url未知，返回404页面
 		{
-			
+			printf("其它方式\n\n");	
+			status_code = 400;
 		}
 	}
 	else //other method
-	{}
+	{
+		printf("其它方法\n\n");
+	}
 
 set:	
 
