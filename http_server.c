@@ -694,54 +694,63 @@ void error_handle(int status_code, int sock)
 }
 int exe_cgi(int sock, char *path)
 {
-//	char line[MAX_COLS] = {0};
-//	int input[2];
-//	int output[2];
-//	pipe(input);
-//	pipe(output);
-//
-//	pid_t pid = fork();
-//	if(pid < 0)
-//	{	
-//		return 500;
-//	}
-//	else if(pid == 0) 
-//	{
-//		close(input[1]);
-//		close(output[0]);
-//
-//		dup2(input[0], 0);
-//		dup2(output[1], 1);
-//		//exec*
-//		execl(path, path, NULL);
-//		exit(1);
-//	}
-//	else
-//	{
-//		close(input[0]);
-//		close(output[1]);
-//		
-//		sprintf(line, "HTTP/1.0 200 OK\r\n");
-//		send(sock, line, strlen(line), 0);
-//		memset(line, 0x00, sizeof(line));
-//		sprintf(line, "Content-Type: text/html;charset=ISO-8859-1\r\n");
-//		send(sock, line, strlen(line), 0);
-//		memset(line, 0x00, sizeof(line));
-//		sprintf(line, "\r\n");
-//		send(sock, line, strlen(line), 0);
-//		
-//		char c;
-//		while(read(output[0], &c, 1) > 0)
-//			send(sock, &c, 1, 0);
-//
-//		wait();
-//		close(input[1]);
-//		close(output[0]);
-//		return 200;
-//	}
 	return 200;
 }
 
+
+void echo_www_register(int sock)
+{
+	char line[4096];
+	char source[50] = {0};
+	char page[] = "wwwroot/log_about/register.html";
+	sprintf(source, "alert(\"该用户名已存在，请重新输入\");");
+	sprintf(line, "HTTP/1.0 200 OK\r\n");
+	write(sock, line, strlen(line));
+	memset(line, 0x00, sizeof(line));
+
+	sprintf(line, "Content-Type: %s;charset=IOS-8859-1\r\n", content_type[0]);
+	write(sock, line, strlen(line));
+	memset(line, 0x00, sizeof(line));
+
+	int len = 0;
+	int source_len = strlen(source);
+	struct stat st;
+	if(stat(page, &st) == 0)
+	{
+		len = st.st_size;
+	}
+	printf("source_len=%d\n", source_len);
+	sprintf(line, "Content-Length: %d\r\n\r\n", len+source_len);
+//	sprintf(line, "Content-Length: %d\r\n\r\n", len);
+	write(sock, line, strlen(line));
+	memset(line, 0x00, sizeof(line));
+
+	printf("开始读文件, %s\n", page);
+	FILE *fp = fopen(page, "r");
+	int s = 0;
+	int num = 0;
+	char keys[] = "<script type=\"text/javascript\">";
+	while(fgets(line, sizeof(line), fp) != NULL)
+	{
+		int l = strlen(line);
+		if(strncasecmp(line, keys, strlen(keys)) == 0)
+		{
+			printf("匹配到\n");
+			write(sock, line, strlen(line));
+			write(sock, source, source_len);
+			num += source_len;
+		}
+		else
+		{
+			write(sock, line, strlen(line));
+		}
+		num += l;
+		memset(line, 0x00, sizeof(line));
+	}
+	fclose(fp);
+
+	printf("文件已关闭, 写了%d个字符\n", num);
+}
 
 /*
   该用户已存在
@@ -751,9 +760,15 @@ void register_response(int sock, char *path)
 {
 	printf("用户注册响应参数， sock=%d  path=%s\n", sock, path);
 	char str[] = "该用户已存在";
-	if(strncmp(path, str, 6*3) == 0)
+	if(strncmp(path, str, 6*3) == 0) //用户名重复，返回注册页面并附加提示信息
 	{
-		
+		echo_www_register(sock);	
+	}
+	else    //注册成功，返回已登录页面
+	{
+		char username[30] = {0};
+		strcmp(username, path+4*3);
+		//echo_www_loged(sock, );
 	}
 }
 void handler_response(int epfd, int sock)
