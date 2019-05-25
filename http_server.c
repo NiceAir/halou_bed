@@ -291,9 +291,9 @@ void readbtyes(int sock, char *s,int slen, int length)
 
 /*
   执行结果有6种可能：
-  参数数量错误、两次密码不一致、&400 
-  链接数据库失败&500
-  注册失败&500
+  参数数量错误、两次密码不一致、&400  //通过错误处理进行响应
+  链接数据库失败&500                  //通过错误处理进行响应 
+  注册失败&500                        //通过错误处理进行响应
   该用户已存在&200
   注册成功&200
  */
@@ -324,12 +324,8 @@ int userRegister(int sock, char *content_length, char *url, int urllen)
 	memset(url, 0x00, urllen);
 	char c;
 	wait();
-//	ssize_t s = read(output[0], url, urllen);
-//	url[s] = 0;
-	char *res[400] = {0};
-	ssize_t s = read(output[0], res, 400);
-	res[s] = 0;
-	printf("cgi执行结果：%s\n", res);
+	ssize_t s = read(output[0], url, urllen);
+	url[s] = 0;
 	int i = 0;
 	int code = 200;
 	for(i = 0; i<strlen(url); i++)
@@ -390,6 +386,7 @@ void handler_request(int epfd, int sock)
 	char *query_string = NULL; //参数字段
 	int status_code = 200;
 	int id = -1;
+	char query_by_cgi[1024] = {0};  //cgi返回的结果
 
 	char line[MAX_COLS] = {0};
 	char content_length[MAX_COLS/16] = {0}; //正文长度
@@ -467,30 +464,35 @@ void handler_request(int epfd, int sock)
 			status_code = 400;
 			goto set;
 		}
-	//	if(strcmp(url, SAVE) != 0)
-	//	{
-	//		status_code = 400;
-	//		goto set;		
-	//	}
 		clear_header(sock);
 		if(strcmp(url, "/save") == 0)  //存图片
 		{
 			//post 接收正文部分中图片的数据并存入数据库，同时把imgid拿到
-			printf("图片存入前，url=%s\n", url);
-			saveImg(sock, content_length, url, sizeof(url), type);
-			if(strlen(url) == 0)
+			printf("存图片，sock=%d, url=%s, content_length=%s, type=%s\n", sock, url, content_length, type);
+			memset(query_by_cgi, 0x00, sizeof(query_by_cgi));
+			saveImg(sock, content_length, query_by_cgi, sizeof(query_by_cgi), type);
+			if(strlen(query_by_cgi) == 0)
 			{
 				status_code = 500;
-				printf("url为空\n");
+				printf("存图片cgi的结果为空\n");
 				goto set;
 			}
-			printf("图片已存入, 此时url=%s\n", url);
+			printf("图片已存入, 此时query_by_cgi=%s\n", query_by_cgi);
 			id = imgid++;
 		}
 		else if(strcmp(url, "/log_about/register") == 0) //注册
 		{
 			printf("进行注册，sock=%d, url=%s, content_length=%s, type=%s\n", sock, url, content_length, type);
-			userRegister(sock, content_length, url, sizeof(url));
+			memset(query_by_cgi, 0x00, sizeof(query_by_cgi));
+			status_code =  userRegister(sock, content_length, query_by_cgi, sizeof(query_by_cgi));	
+			if(strlen(query_by_cgi) == 0)
+			{
+				status_code = 500;
+				printf("注册的cgi结果为空\n");
+				goto set;
+			}
+			printf("用户注册成功, 此时query_by_cgi=%s\n", query_by_cgi);
+
 		}
 		else if(strcmp(url, "/log_about/login") == 0) //登录
 		{
@@ -508,7 +510,10 @@ void handler_request(int epfd, int sock)
 	}
 
 set:	
-
+	if(strcasecmp(method, "POST") == 0)
+	{
+		query_string = query_by_cgi;
+	}
 	if(haxiInsert(&head_haxi, sock, method, url, query_string, id, status_code, clos) < 0)
 	{
 		epoll_ctl(epfd, EPOLL_CTL_DEL, sock, NULL);
@@ -736,6 +741,21 @@ int exe_cgi(int sock, char *path)
 //	}
 	return 200;
 }
+
+
+/*
+  该用户已存在
+  注册成功
+ */
+void register_response(int sock, char *path)
+{
+	printf("用户注册响应参数， sock=%d  path=%s\n", sock, path);
+	char str[] = "该用户已存在";
+	if(strncmp(path, str, 6*3) == 0)
+	{
+		
+	}
+}
 void handler_response(int epfd, int sock)
 {
 	char *method = head_haxi.arry[sock].method;
@@ -744,6 +764,8 @@ void handler_response(int epfd, int sock)
 	int id = head_haxi.arry[sock].imgid;
 	int status_code = head_haxi.arry[sock].status_code;
 	int clos = head_haxi.arry[sock].clos;
+	int response_code = 200;
+	char path[MAX_COLS/4] = {0};
 	//show_time();	
 	printf("获得参数：method: %s    url: %s    query_string: %s    id: %d    status_code: %d    sock:%d    close:%d\n", method, url, query_string, id, status_code, sock, clos);
 	int cgi = 0;
@@ -763,83 +785,101 @@ void handler_response(int epfd, int sock)
 			cgi = 1;
 			printf("get、cgi=1：method: %s    url: %s    query_string: %s    id: %d    status_code: %d    sock:%d    close:%d\n", method, url, query_string, id, status_code, sock, clos);
 		}
+		else  //发送普通文件，文件在images下和wwwroot下
+		{	  //images 下的图片是用户上传的，url自带/images/
+			  //所以首先尝试添加wwwroot,若找不到文件，则去掉wwwroot，直接找url下的（images），若还找不到就404
+			sprintf(path, "wwwroot%s", url); 
+			if(path[strlen(path)-1] == '/')
+				strcat(path, HOME_PAGE);
+			printf("reponse中，method:%s   url:%s   query_string:%s   path:%s\n", method, url, query_string, path);
+			struct stat st;
+			if(stat(path, &st) == 0)  //添加wwwroot后能打开，说明是wwwroot下的静态文件
+			{	
+				if(S_ISDIR(st.st_mode))
+				{
+					strcat(path, "/");
+					strcat(path, HOME_PAGE);
+					struct stat st2;
+					if(stat(path, &st2) < 0)
+					{
+						status_code = 404;
+						goto error;
+					}
+				}
+				
+			}
+			else //添加wwwroot后不能打开，则去掉wwwroot/后再次尝试
+			{
+				int len = strlen(path);
+				printf("去掉wwwroot/前，path:%s\n", path);
+				int i = 0;
+				for(i = 0; i<len-8; i++)
+				{
+					path[i] = path[i+8];
+				}
+				path[i] = 0;
+				printf("去掉wwwroot/后，i=%d, path:%s\n", i, path);
+				if(stat(path, &st) < 0)
+				{
+					status_code = 404;
+					goto error;
+				}
+				else if(st.st_mode & S_IXUSR ||
+						st.st_mode & S_IXGRP ||
+						st.st_mode & S_IXOTH)
+				{
+					cgi = 1;
+					printf("文件%s具有可执行属性\n", path);
+				}
+
+			}
+
+		}
 	}
 	else if(strcasecmp(method, "post") == 0) //post方法
 	{
-		if(id == -1) //post方法不带参数，没拿到图片id,出错
+		printf("reponse中，method:%s   url:%s   query_string:%s   path:%s\n", method, url, query_string, path);
+		sprintf(path, "%s", query_string);
+		if(strcmp(url, "/save") == 0)  
+		{
+			response_code = 201;
+		}
+		else if(strcmp(url, "/log_about/register") == 0)
+		{
+			response_code = 202;
+		}
+		else
 		{
 			status_code = 400;
 			goto error;
 		}
-		else
-			cgi = 1;
 	}
 	else //其它方法
-	{}
+	{
+	}
 		
-//检查url，判断404,check is requesting img
-//************do it **********
+//************以下进行200响应 **********
 
-	char path[MAX_COLS/8] = {0};
-	sprintf(path, "wwwroot%s", url);
-	if(path[strlen(path)-1] == '/')
-		strcat(path, HOME_PAGE);
-	struct stat st;
-	//这里需要把地址做一下变换
-	char tmp[100] = {0};
-	strcpy(tmp, path+8);
-	if(stat(path, &st) < 0)
-	{
-		if(strncmp(path, "wwwrootimages/", 14) == 0)
-		{
-			status_code = 201;
-			cgi = 0;
-		}
-		else if(stat(tmp, &st) == 0)
-		{	
-			memset(path, 0x00, sizeof(path));
-			strcpy(path, tmp);
-			status_code = 200;
-		}
-		else
-		{
-			status_code = 404;
-			printf("stat(%s)\n", path); goto error;
-		}
-	}
-	else 
-	{
-		if(S_ISDIR(st.st_mode))
-		{
-			strcat(path, "/");
-			strcat(path, HOME_PAGE);
-		}
-		else if(st.st_mode & S_IXUSR ||
-				st.st_mode & S_IXGRP ||
-				st.st_mode & S_IXOTH)
-		{
-			cgi = 1;
-			printf("文件%s具有可执行属性\n", path);
-		}
-		else
-		{
-			//do_nothing
-		}
-	}
 	if(cgi)
 	{
-		//exe_cgi();
 		printf("do exe_cgi (%s), status_code=%d\n", path, status_code);
 		status_code = exe_cgi(sock, path);
 	}
-	else
+	else if(status_code == 200)
 	{
-		printf("echo_www %d    %s\n", sock, path);
-		if(status_code == 201)
-			echo_www_url(sock, path);
-		else echo_www(sock, path, 200);
-//		echo_www(sock, path, 200);
+		printf("echo_www %d    %s   response_code:%d\n", sock, path, response_code);
+		if(response_code == 200)
+			echo_www(sock, path, 200);   //发送普通文件
+
+		if(response_code == 201)
+			echo_www_url(sock, path);     //上传成功界面
+		if(response_code == 202)          //用户注册
+		{
+			register_response(sock, path);
+		}
+
 	}
+//************以上进行200响应 **********
 error:
 	if(status_code != 200 && status_code != 201)
 	{

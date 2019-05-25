@@ -45,14 +45,14 @@ $sql = "select name from user where name='" . $username . "';";
 $res = mysqli_query($conn, $sql);
 if (mysqli_num_rows($res) > 0)
 {
-	echo "该用户已存在&200";
+	echo "该用户已存在".$username. "&200";
 	$conn->close();
 	exit();
 }
 $sql = sprintf("insert into user(name, passwd, email) values('%s', '%s', '%s');", $username, $passwd1, $email);
 $res = mysqli_query($conn, $sql);
 if($res)
-	echo "注册成功&200";
+	echo "注册成功" . $username . "&200";
 else
 	echo "注册失败&500";
 $conn->close();
