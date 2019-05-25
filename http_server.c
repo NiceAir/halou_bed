@@ -288,6 +288,15 @@ void readbtyes(int sock, char *s,int slen, int length)
 			break;
 	}
 }
+
+/*
+  执行结果有6种可能：
+  参数数量错误、两次密码不一致、&400 
+  链接数据库失败&500
+  注册失败&500
+  该用户已存在&200
+  注册成功&200
+ */
 int userRegister(int sock, char *content_length, char *url, int urllen)
 {
 	int status = 200;

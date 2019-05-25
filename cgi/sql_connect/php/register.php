@@ -32,7 +32,7 @@ $email = deleteTag($email);
 if($passwd1 == $passwd2)
 	$passwd1 = md5("baobao". $passwd1 . "xiangni");
 else {
-	echo "两次密码不一致&200";
+	echo "两次密码不一致&400";
 	exit();
 }
 	

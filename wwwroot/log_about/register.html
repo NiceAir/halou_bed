@@ -19,6 +19,47 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 	<link href="../css/bootstrap-fileinput.css" rel="stylesheet">
 	<title>注册</title>
 </head>
+<script type="text/javascript">
+	function checkForm(form)
+	{
+		var username=form.username.value;  
+		var passwd1=form.passwd1.value;
+		var passwd2=form.passwd2.value;
+		var email=form.email.value;
+		if(username==null || username=="")
+		{
+			alert("请输入用户名！");
+			form.username.focus();
+			return false;
+		}
+		if(passwd1==null || passwd1=="")
+		{
+			alert("请输入密码！");
+			form.username.focus();
+			return false;
+		}
+		if(passwd2==null || passwd2=="")
+		{
+			alert("请确认密码！");
+			form.username.focus();
+			return false;
+		}
+		if(passwd1 != passwd2)
+		{
+			alert("两次密码不一致！");
+			form.username.focus();
+			return false;
+		}
+		if(email==null || email=="")
+		{
+			alert("请输入邮箱！");
+			form.username.focus();
+			return false;
+		}
+		return true;
+	}
+</script>
+
 <body>
 <div class="banner">
 	<div class="container">
@@ -42,11 +83,11 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 	<div class="banner-text wow fadeInUp">
 		<h1><span>注册您的账户</span></h1>
 		<div >
-			<form name="register" method="post" action = "register">
-				<span style="color: #1B242F "><strong>&nbsp;&nbsp;&nbsp;&nbsp; 用户名</strong></span><input  type="text" name="username"/><br>
-				<span style="color: #1B242F "><strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;密码</strong></span> <input type="password" name="passwd1"/><br>
-				<span style="color: #1B242F "><strong>确认密码</strong></span> <input  type="password" name="passwd2" /><br>
-				<span style="color: #1B242F "><strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;邮件</strong></span> <input  type="email" name="email"/><br>
+			<form name="register" method="post" action = "register" onsubmit="return checkForm(this)">
+					<span style="color: #1B242F "><strong>&nbsp;&nbsp;&nbsp;&nbsp; 用户名</strong></span><input  type="text" name="username"/> <br>
+					<span style="color: #1B242F "><strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;密码</strong></span> <input type="password" name="passwd1"/> <br>
+				<span style="color: #1B242F "><strong>确认密码</strong></span> <input  type="password" name="passwd2" /> <br>
+				<span style="color: #1B242F "><strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;邮件</strong></span> <input  type="email" name="email"/> <br>
 				<button type="submit"  class="btn btn-info">提交</button>
 			</form>
 		</div>
