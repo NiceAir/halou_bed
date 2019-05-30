@@ -12,7 +12,7 @@
 #include<arpa/inet.h>
 #include<fcntl.h>
 #define PORT 9999
-#define IP "192.168.1.105"
+#define IP "192.168.1.103"
 #define MAX_EVENTS 30
 #define MAX_COLS 1024
 #define HOME_PAGE "index.html"
@@ -621,7 +621,7 @@ void echo_www_url(int sock, char *path)
 	char line[4096];
 	char source[50] = {0};
 	printf("path: %s\n", path);
-	sprintf(source, "http://%s:%d/%s", IP, PORT, path+7);
+	sprintf(source, "http://%s:%d/%s", IP, PORT, path);
 	printf("path: %s\n", path);
 	printf("source: %s\n", source);
 	int source_len = strlen(source);
