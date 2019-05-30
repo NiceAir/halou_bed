@@ -267,7 +267,7 @@ s: 缓存区 slen：缓存区的大小
 length: 需要读取的字节数
 
  */
-void readbtyes(int sock, char *s,int slen, int length)
+void readbytes(int sock, char *s,int slen, int length)
 {
 	int count = 0;
 	while(count < length)
@@ -311,7 +311,7 @@ int userRegister(int sock, char *content_length, char *url, int urllen)
 	if(pid == 0) //子进程
 	{
 		char s[200] = {0};
-		readbtyes(sock, s, 200, atoi(content_length));
+		readbytes(sock, s, 200, atoi(content_length));
 		printf("s is %s\n", s);
 		close(output[0]);
 		dup2(output[1], 1);
@@ -378,6 +378,39 @@ int getId()
 	return id;
 }
 
+//返回值表登录成功与否，若登录成功，则query_by_cgi中是cooike
+int userLogin(int sock, char * content_length, char *query_by_cgi, int query_len) //登录结果只有两种：登录成功和登录失败
+{
+	int output[2];
+	printf("userLogin获得参数，sock:%d, content_length:%s, query_by_cgi:%s\n", sock, content_length, query_by_cgi);
+	pipe(output);
+	pid_t pid = fork();
+	if(pid < 0)
+		return 0;
+	if(pid == 0)
+	{
+		char s[300] = {0};
+		char buf[1024] = {0};
+		readbytes(sock, s, sizeof(s), atoi(content_length));
+		printf("s:%s\n", s);
+		close(output[0]);
+		dup2(output[1], 1);
+		chdir("cgi/sql_connect");
+    	execl("sh/login.sh", "sh/login.sh" , s, NULL);
+		perror("ececl 失败");
+		exit(1);
+	}
+	close(output[1]);
+	wait();
+	char tmp[400] = {0};   //临时接收cgi的返回结果，其中状态码为3位,cooike为32位
+	size_t s = read(output[0], tmp, sizeof(tmp));
+	tmp[s] = 0;
+	int status = atoi(tmp);
+	sprintf(query_by_cgi, "%s", tmp+4);
+	printf("userLogin中CGI的执行结果: status=%d   %s\n", status, query_by_cgi);
+	close(output[0]);
+	return status;
+}
 
 void handler_request(int epfd, int sock)
 {
@@ -497,6 +530,7 @@ void handler_request(int epfd, int sock)
 		else if(strcmp(url, "/log_about/login") == 0) //登录
 		{
 			printf("用户登录，sock=%d, url=%s, content_length=%s, type=%s\n", sock, url, content_length, type);
+			status_code = userLogin(sock, content_length, query_by_cgi, sizeof(query_by_cgi)); //登录结果只有两种：登录成功和登录失败
 		}
 		else   //POST 的url未知，返回404页面
 		{
@@ -1095,15 +1129,15 @@ int main(int argc, char *argv[])
 		perror("bind");
 		return 3;
 	}
-	if(listen(sock, 5) < 0)
+	if(listen(sock, 25) < 0)
 	{
 		perror("listen");
 		return 4;
 	}
 	haxiInit(&head_haxi, 10);
 //	imgid = getId();
-	printf("初始化获得imgid：%d, 睡3秒\n", imgid);
-	sleep(3);
+	printf("初始化获得imgid：%d, 睡2秒\n", imgid);
+	sleep(2);
 	int epfd = epoll_create(MAX_EVENTS);
 	struct epoll_event event;
 	event.events = EPOLLIN | EPOLLET;
