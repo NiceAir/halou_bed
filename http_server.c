@@ -587,7 +587,7 @@ int echo_www(int sock, char *path, int status_code)
 {
 	char *head = NULL;
 	char *type = NULL;
-
+	char line[4096] = {0};
 	if(status_code == 200)
 		head = response_head[0];
 	else if(status_code == 400)
@@ -608,9 +608,28 @@ int echo_www(int sock, char *path, int status_code)
 	struct stat st;
 	if(stat(path, &st) == 0)
 	{
-		printf("start sendfile sock=%d  fd=%d  st_size=%d\n", sock, fd, st.st_size);
-		sendfile(sock, fd, NULL, st.st_size);
-		printf("end sendfile sock=%d  fd=%d  st_size=%d\n", sock, fd, st.st_size);
+//		sendfile(sock, fd, NULL, st.st_size);
+		size_t num = 0;       //已发送的字符数
+		size_t need = st.st_size;   //还需发送的字符数
+		printf("start sendfile sock=%d  fd=%d  need=%d\n", sock, fd, need);
+		while(need > 0 )
+		{
+
+			ssize_t send_num = sendfile(sock, fd, &num, need);
+			if(send_num < 0 )
+			{
+				if(errno == EAGAIN || errno == ENOMEM)
+					continue;
+				else
+					break;
+			}
+			need -= send_num;
+		}
+		printf("end sendfile sock=%d  fd=%d  num=%d\n", sock, fd, num);
+	}
+	else
+	{
+		printf("文件%s发送失败\n", path);
 	}
 	close(fd);
 	return 200;
