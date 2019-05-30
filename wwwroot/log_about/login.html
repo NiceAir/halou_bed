@@ -19,6 +19,27 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 <link href="../css/bootstrap-fileinput.css" rel="stylesheet">
 <title>登录</title>
 </head>
+<script type="text/javascript">
+	function checkForm(form)
+	{
+		var username=form.username.value;  
+		var passwd=form.passwd.value;
+		if(username==null || username=="")
+		{
+			alert("请输入用户名！");
+			form.username.focus();
+			return false;
+		}
+		if(passwd==null || passwd=="")
+		{
+			alert("请输入密码！");
+			form.username.focus();
+			return false;
+		}
+		return true;
+	}
+</script>
+
 <body>
 <div class="banner">
 	<div class="container">
@@ -42,10 +63,12 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
     <div class="banner-text wow fadeInUp">
 		<h1><span>登录您的账户</span></h1>
 			<div >
-				<form name="login" method="post" action = "login">
-					<span style="color: #1B242F "><strong>&nbsp;&nbsp;&nbsp;&nbsp; 用户名</strong></span><input  type="text" value=""/><br>
-					<span style="color: #1B242F "><strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;密码</strong></span> <input type="password" value=""/><br>
-					<button type="submit"  class="btn btn-info">提交</button>
+				<form name="login" method="post" action = "login" onsubmit="return checkForm(this)" >
+					<span style="color: #1B242F "><strong>&nbsp;&nbsp;&nbsp;&nbsp; 用户名</strong></span><input  type="text" value="" name="username"  placeholder="请输入用户名"/><br>
+					<span style="color: #1B242F "><strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;密码</strong></span> <input type="password" value="" name="passwd" placeholder="请输入密码"/><br>
+					<div id="error_box"><br></div>
+					<div id="error_box1"><br></div>
+					<button type="submit" class="btn btn-info" >登录</button>
 				</form>
 			</div>
 	</div>

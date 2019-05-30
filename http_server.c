@@ -14,7 +14,7 @@
 #define PORT 9999
 #define IP "192.168.1.103"
 #define MAX_EVENTS 30
-#define MAX_COLS 1024
+#define MAX_COLS 4096
 #define HOME_PAGE "index.html"
 #define PAGE_400 "wwwroot/400.html"
 #define PAGE_404 "wwwroot/404.html"
@@ -740,7 +740,6 @@ void echo_www_register(int sock)
 	}
 	printf("source_len=%d\n", source_len);
 	sprintf(line, "Content-Length: %d\r\n\r\n", len+source_len);
-//	sprintf(line, "Content-Length: %d\r\n\r\n", len);
 	write(sock, line, strlen(line));
 	memset(line, 0x00, sizeof(line));
 
@@ -771,7 +770,111 @@ void echo_www_register(int sock)
 	printf("文件已关闭, 写了%d个字符\n", num);
 }
 
+//urls:用户所上传的图片url
+void echo_www_loged(int sock, char *username, char *urls)
+{
+	char show_user[150] = {0};
+	char line[4096] = {0};
+	char page[] = "wwwroot/user_index.html";
+	int num_url = 0;         //图片的数量
+	char source[] = "<input class=\"wow fadeInRight\" data-wow-delay=\"0.5s\" type=\"text\" value=\"\" name=\"我的图片\"/><br>\r\n";
+	sprintf(show_user, "<li><a href=\"#\" name=\"user\">你好，亲爱的%s</a></li>\r\n", username);
+	sprintf(line, "HTTP/1.0 200 OK\r\n");
+	write(sock, line, strlen(line));
+	memset(line, 0x00, sizeof(line));
+
+	sprintf(line, "Content-Type: %s;charset=IOS-8859-1\r\n", content_type[0]);
+	write(sock, line, strlen(line));
+	memset(line, 0x00, sizeof(line));
+	int len = 0;
+	int all_len = 0;
+	struct stat st;
+	if(stat(page, &st) == 0)
+	{
+		len = st.st_size;
+	}
+	all_len += len;
+	all_len += strlen(username);
+	if(urls != NULL)
+	{
+		num_url = 1;   //urls不为空，则至少有一个图片
+		int i = 0;
+		for(i = 0; i<strlen(urls); ++i)
+		{
+			if(urls[i] == '&')
+				num_url += 1;
+		}
+		all_len = all_len + strlen(urls) - (num_url-1);
+		all_len =  all_len + (num_url-1)*strlen(source); //文件中本身就有一个source，所以减1
+	}
+	sprintf(line, "Content-Length: %d\r\n\r\n", all_len);
+	write(sock, line, strlen(line));
+	memset(line, 0x00, sizeof(line));
+	printf("all_len=%d\n", all_len);
+	printf("num_url=%d\n", num_url);
+	printf("开始读文件, %s\n", page);
+	FILE *fp = fopen(page, "r");
+	int num = 0;          //已发送的字符串数量
+	int sign1 = 0;        //标志着是否已发送用户名，0为还没发
+	int sign2 = 0;        //标志着是否已发送图片url，0为还没发
+	while(fgets(line, sizeof(line), fp) != NULL)
+	{
+		if(sign1 == 0)
+		{
+			char str[] = "<li><a href=\"#\" name=\"user\">你好，亲爱的</a></li>";
+			if(strncasecmp(line, str, strlen(str)) == 0)
+			{
+				write(sock, show_user, strlen(show_user));
+				sign1 = 1;
+				printf("前：[%s]\n", line);
+				printf("后：[%s]\n", show_user);
+				num += strlen(show_user);
+				memset(line, 0x00, sizeof(line));
+				continue;
+			}
+		}
+		if(sign2 == 0 && urls != NULL)
+		{
+			if(strncasecmp(line, source, strlen(source)) == 0)
+			{
+			// 切分并组装图片url，然后发送
+				int i = 0;
+				char show_url[400] = {0};
+				sprintf(show_url, "<input class=\"wow fadeInRight\" data-wow-delay=\"0.2s\" type=\"text\" value=\"%s\" name=\"我的图片\"/><br>\r\n", strtok(urls, "&"));
+				write(sock, show_url, strlen(show_url));
+				printf("show_url:%s\n", show_url);
+				num += strlen(show_url);
+				for(i = 0; i<num_url-1; i++)
+				{
+					memset(show_url, 0x00, sizeof(show_url));	
+					sprintf(show_url, "<input class=\"wow fadeInRight\" data-wow-delay=\"0.2s\" type=\"text\" value=\"%s\" name=\"我的图片\"/><br>\r\n", strtok(NULL, "&"));
+					write(sock, show_url, strlen(show_url));
+					printf("show_url:%s\n", show_url);
+					num += strlen(show_url);
+				}
+				sign2 = 1;
+				memset(line, 0x00, sizeof(line));
+				continue;
+			}
+		}
+		write(sock, line, strlen(line));
+		num += strlen(line);
+		memset(line, 0x00, sizeof(line));
+	}
+	fclose(fp);
+
+	printf("文件已关闭, 已经发送了%d个字符\n", num);
+
+}
+
+void echo_www_loged_with_register(int sock, char *username)
+{ 
+	printf("echo_www_loged 获得参数，sock:%d, username:%s\n", sock, username);
+	echo_www_loged(sock, username, NULL);
+}
+
 /*
+  两种情况：
   该用户已存在
   注册成功
  */
@@ -786,8 +889,9 @@ void register_response(int sock, char *path)
 	else    //注册成功，返回已登录页面
 	{
 		char username[30] = {0};
-		strcmp(username, path+4*3);
-		//echo_www_loged(sock, );
+		strcpy(username, path+4*3);
+		printf("register_response中， path:%s\n", path);
+		echo_www_loged_with_register(sock, username);
 	}
 }
 void handler_response(int epfd, int sock)
