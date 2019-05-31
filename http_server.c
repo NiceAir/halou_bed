@@ -907,6 +907,23 @@ void echo_www_loged_with_register(int sock, char *username)
 	echo_www_loged(sock, username, NULL);
 }
 
+
+//解析path中的用户名和cooike，通过用户名查最多查10个图片url
+//然后拼接echo_www_loged需要的参数形式
+void echo_www_loged_with_log(int sock, char *path)
+{
+	char cooike[33] = {0};
+	char username[30] = {0};
+	printf("echo_www_loged_with_log 获得参数，sock:%d, path:%s\n", sock, path);
+	strtok(path, "&");
+	sprintf(cooike, "%s", strtok(NULL, "&"));
+	sprintf(username, "%s", strtok(NULL, "&"));
+	printf("cooike:%s   username:%s\n", cooike, username);
+	int output[2];
+	ppid_t pid = fork();
+
+}
+
 /*
   两种情况：
   该用户已存在
@@ -928,6 +945,29 @@ void register_response(int sock, char *path)
 		echo_www_loged_with_register(sock, username);
 	}
 }
+
+/*
+   登录失败返回失败页面
+   登录成功返回成功页面
+ */
+void login_response(int sock, char *path)
+{
+	printf("login_response获得参数，sock=%d  path:%s    status_code=%d\n", sock, path);
+	if(strncmp(path, "登录失败", 4*3) == 0)
+	{
+		char path[] = "wwwroot/log_about/login_error.html";
+		echo_www(sock, path, 200);	
+	}
+	else if(strncmp(path, "登录成功", 4*3) == 0)
+	{
+		echo_www_loged_with_log(sock, path);
+	}
+	else
+	{
+		echo_www(sock, PAGE_400, 200);
+	}
+}
+
 void handler_response(int epfd, int sock)
 {
 	char *method = head_haxi.arry[sock].method;
@@ -1020,6 +1060,11 @@ void handler_response(int epfd, int sock)
 		{
 			response_code = 202;
 		}
+		else if(strcmp(url, "/log_about/login") == 0)
+		{
+			response_code = 203;
+			
+		}
 		else
 		{
 			status_code = 400;
@@ -1048,6 +1093,10 @@ void handler_response(int epfd, int sock)
 		if(response_code == 202)          //用户注册
 		{
 			register_response(sock, path);
+		}
+		if(response_code == 203)
+		{
+			login_response(sock, path);
 		}
 
 	}

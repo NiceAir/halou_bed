@@ -33,20 +33,20 @@ $passwd = md5("baobao". $passwd . "xiangni");
 
 $conn = new mysqli("127.0.0.1", "root", "123", "halou_bed");
 if ($conn->connect_error) {
-	echo "500&链接数据库失败";
+	echo "500&数据库连接失败";
 	exit();
 }
 $sql = "select name from user where name='" . $username . "' and passwd='" . $passwd . "';"; 
 $res = mysqli_query($conn, $sql);
 if (mysqli_num_rows($res) <= 0)         //数据库里找不到数据（用户名或密码不对）
 {
-	echo "204&";
+	echo "200&登录失败";
 }
 else          //找到了，登录成功
 {
 	
 	$cooike = md5(time());
-	echo "200&" . $cooike . "&" . $username;
+	echo "200&登录成功&" . $cooike . "&" . $username;
 }
 $conn->close();
 exit();
