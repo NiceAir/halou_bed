@@ -877,14 +877,14 @@ void echo_www_loged(int sock, char *username, char *urls)
 			// 切分并组装图片url，然后发送
 				int i = 0;
 				char show_url[400] = {0};
-				sprintf(show_url, "<input class=\"wow fadeInRight\" data-wow-delay=\"0.2s\" type=\"text\" value=\"%s\" name=\"我的图片\"/><br>\r\n", strtok(urls, "&"));
+				sprintf(show_url, "<input class=\"wow fadeInRight\" data-wow-delay=\"0.2s\" type=\"text\" value=\"http://%s:%d/%s\" name=\"我的图片\"/><br>\r\n", IP, PORT, strtok(urls, "&"));
 				write(sock, show_url, strlen(show_url));
 				printf("show_url:%s\n", show_url);
 				num += strlen(show_url);
 				for(i = 0; i<num_url-1; i++)
 				{
 					memset(show_url, 0x00, sizeof(show_url));	
-					sprintf(show_url, "<input class=\"wow fadeInRight\" data-wow-delay=\"0.2s\" type=\"text\" value=\"%s\" name=\"我的图片\"/><br>\r\n", strtok(NULL, "&"));
+					sprintf(show_url, "<input class=\"wow fadeInRight\" data-wow-delay=\"0.2s\" type=\"text\" value=\"http://%s:%d/%s\" name=\"我的图片\"/><br>\r\n", IP, PORT, strtok(NULL, "&"));
 					write(sock, show_url, strlen(show_url));
 					printf("show_url:%s\n", show_url);
 					num += strlen(show_url);
