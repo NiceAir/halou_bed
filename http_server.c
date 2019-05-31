@@ -504,7 +504,7 @@ void handler_request(int epfd, int sock)
 			printf("存图片，sock=%d, url=%s, content_length=%s, type=%s\n", sock, url, content_length, type);
 			memset(query_by_cgi, 0x00, sizeof(query_by_cgi));
 			saveImg(sock, content_length, query_by_cgi, sizeof(query_by_cgi), type);
-			if(strlen(query_by_cgi) == 0)
+			if(strlen(query_by_cgi) == 7)
 			{
 				status_code = 500;
 				printf("存图片cgi的结果为空\n");
@@ -588,16 +588,17 @@ void echo_head(int sock, char *head, char *type, char *path)
 	char line[1024] = {0};
 
 	sprintf(line, "HTTP/1.0 %s", head);
+	printf("%s\n", line);
 	write(sock, line, strlen(line));
 	memset(line, 0x00, sizeof(line));
 
 	type = strrchr(path, '.');		
 	type++;
 	type_change(&type);
-	printf("xixxixiixixixxixixxixiixixixxixxxiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiixixixxixixixixixiiiiiiixxxxxxxxxxxxxxxxxxxxxxxxx\n");
 	
 	printf("path=%s		type=%s\n", path, type);
 	sprintf(line, "Content-Type: %s;charset=IOS-8859-1\r\n", type);
+	printf("%s\n", line);
 	write(sock, line, strlen(line));
 	memset(line, 0x00, sizeof(line));
 
@@ -608,6 +609,7 @@ void echo_head(int sock, char *head, char *type, char *path)
 		len = st.st_size;
 	}
 	sprintf(line, "Content-Length: %d\r\n", len);
+	printf("%s\n", line);
 	write(sock, line, strlen(line));
 	memset(line, 0x00, sizeof(line));
 
@@ -659,7 +661,7 @@ int echo_www(int sock, char *path, int status_code)
 			}
 			need -= send_num;
 		}
-		printf("end sendfile sock=%d  fd=%d  num=%d\n", sock, fd, num);
+		printf("end sendfile sock=%d  fd=%d  num=%d need=%d\n", sock, fd, num, need);
 	}
 	else
 	{
@@ -739,7 +741,7 @@ void error_handle(int status_code, int sock)
 		echo_www(sock, PAGE_404, 404);	
 		break;
 	case 500:
-		echo_www(sock, PAGE_500, 500);
+		echo_www(sock, PAGE_500, 200);
 		break;
 	default:
 		break;
@@ -919,8 +921,6 @@ void echo_www_loged_with_log(int sock, char *path)
 	sprintf(cooike, "%s", strtok(NULL, "&"));
 	sprintf(username, "%s", strtok(NULL, "&"));
 	printf("cooike:%s   username:%s\n", cooike, username);
-	int output[2];
-	ppid_t pid = fork();
 
 }
 
