@@ -813,6 +813,7 @@ void echo_www_loged(int sock, char *username, char *urls)
 	char line[4096] = {0};
 	char page[] = "wwwroot/user_index.html";
 	int num_url = 0;         //图片的数量
+	printf("echo_www_loged获得参数，sock=%d, username:%s, urls:%s\n", sock, username, urls);
 	char source[] = "<input class=\"wow fadeInRight\" data-wow-delay=\"0.5s\" type=\"text\" value=\"\" name=\"我的图片\"/><br>\r\n";
 	sprintf(show_user, "<li><a href=\"#\" name=\"user\">你好，亲爱的%s</a></li>\r\n", username);
 	sprintf(line, "HTTP/1.0 200 OK\r\n");
@@ -909,6 +910,36 @@ void echo_www_loged_with_register(int sock, char *username)
 	echo_www_loged(sock, username, NULL);
 }
 
+/*
+ 返回值由cgi的结果而来，500为没找到
+ 200为找到
+ */
+int get_urls_by_name(char *query_string, int query_len, char *username)
+{
+	int output[2];
+	pipe(output);
+	pid_t pid = fork();
+	if(pid < 0)
+		return 500;
+	if(pid == 0)
+	{
+		close(output[0]);
+		dup2(output[1], 1);
+		execl("cgi/sql_connect/get_urls", "cgi/sql_connect/get_urls", username, NULL);
+		perror("execl 失败");
+		exit(500);
+	}
+	close(output[1]);
+	wait();
+	char tmp[1024] = {0};
+	ssize_t s = read(output[0], tmp, sizeof(tmp));
+	tmp[s] = 0;
+	close(output[0]);
+	int status = atoi(tmp);
+	if(status == 200)
+		sprintf(query_string ,"%s", tmp+3);
+	return status;
+}
 
 //解析path中的用户名和cooike，通过用户名查最多查10个图片url
 //然后拼接echo_www_loged需要的参数形式
@@ -916,12 +947,24 @@ void echo_www_loged_with_log(int sock, char *path)
 {
 	char cooike[33] = {0};
 	char username[30] = {0};
+	char urls[1024] = {0};     //传入get_url_by_name中获得用户上传图片的URL
 	printf("echo_www_loged_with_log 获得参数，sock:%d, path:%s\n", sock, path);
 	strtok(path, "&");
 	sprintf(cooike, "%s", strtok(NULL, "&"));
 	sprintf(username, "%s", strtok(NULL, "&"));
 	printf("cooike:%s   username:%s\n", cooike, username);
-
+	int status = get_urls_by_name(urls, sizeof(urls), username);
+	printf("get_urls_by_name的返回结果为：%d     %s", status, urls);
+	if(status == 500)
+	{
+		echo_www_loged(sock, username, NULL);
+	}
+	else
+	{	
+		int len = strlen(urls);	
+		urls[len-1] = 0;
+		echo_www_loged(sock, username, urls+1);
+	}
 }
 
 /*
