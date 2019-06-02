@@ -22,8 +22,8 @@ Smartphone Compatible web template, free webdesigns for Nokia, Samsung, LG, Sony
 </script>
 <!--/animated-css-->
 <!--script-->
-<script type="text/javascript" src="../js/move-top.js"></script>
-<script type="text/javascript" src="../js/easing.js"></script>
+<script type="text/javascript" src="js/move-top.js"></script>
+<script type="text/javascript" src="js/easing.js"></script>
 <!--/script-->
 <script type="text/javascript">
 			jQuery(document).ready(function($) {
@@ -59,50 +59,50 @@ function check(){
 				 <span class="menu"></span> 
 				 <ul>
 <li><a href="#" name="user">你好，亲爱的</a></li>
+					 <li><a href="../index.html" >退出登录</a></li>
 					<li><a href="https://blog.csdn.net/NeverWA" target="_blank">关于</a></li>
 				 </ul>
 			 </div>
 			 <div class="clearfix"></div>
 		</div>	
 	</div>
-
-	<div class="banner-text wow fadeInUp">
+    <div class="banner-text wow fadeInUp" data-wow-delay="0.5s">
+		<h1> <label>您的图片</label></h1>
+	
 		<div class="banner-form">
 			<form name="uploadForm" id="uploadForm" method="post" enctype="multipart/form-data" action = "#">
-				<h2>我的图片</h2>
 <input class="wow fadeInRight" data-wow-delay="0.5s" type="text" value="" name="我的图片"/><br>
-
 			</form>
 		</div>
-	</div>
-
-	<div class="banner-text wow fadeInUp">
-		<h1><span>上传 </span>与 <span>分享</span> <label>您的图片</label></h1>
-		<form enctype='multipart/form-data' method="post" action="save" onsubmit="return check()">
-			<div>
-				<div class="fileinput fileinput-new" data-provides="fileinput"  id="exampleInputUpload">
-					<div class="fileinput-new thumbnail" style="width: 200px;height: auto;max-height:150px;">
-						<img id='picImg' style="width: 100%;height: auto;max-height: 200px;" src="../images/noimage.png" alt="" />
-					</div>
-					<div class="fileinput-preview fileinput-exists thumbnail" style="max-width: 200px; max-height: 150px;"></div>
-					<div>
+	<!--
+	-->		
+			<form enctype='multipart/form-data' method="post" action="save" onsubmit="return check()">
+				<div>
+					<div class="fileinput fileinput-new" data-provides="fileinput"  id="exampleInputUpload">
+						<div class="fileinput-new thumbnail" style="width: 200px;height: auto;max-height:150px;">
+							<img id='picImg' style="width: 100%;height: auto;max-height: 200px;" src="images/noimage.png" alt="" />
+						</div>
+						<div class="fileinput-preview fileinput-exists thumbnail" style="max-width: 200px; max-height: 150px;"></div>
+						<div>
 							<span class="btn btn-primary btn-file">
 								<span class="fileinput-new">选择文件</span>
 								<span class="fileinput-exists">换一张</span>
 								<input type="file" name="pic1" id="picID" accept="image/gif,image/jpeg,image/x-png">
 							</span>
-						<a href="javascript:;" class="btn btn-warning fileinput-exists" data-dismiss="fileinput">移除</a>
+							<a href="javascript:;" class="btn btn-warning fileinput-exists" data-dismiss="fileinput">移除</a>
+						</div>
 					</div>
 				</div>
-			</div>
-			<button type="submit"  class="btn btn-info">提交</button>
-		</form>
+<input type="hidden" name="username" value="哈哈">
+<input type="hidden" name="passwd" value="123">
+				<button type="submit"  class="btn btn-info">提交</button>
+				
+			</form>
+	<!--		
+		</div>
+	-->
 	</div>
-
-
 </div>
-
-
 
 <script src="../js/jquery.min.js"></script>
 <script src="../js/bootstrap-fileinput.js"></script>
