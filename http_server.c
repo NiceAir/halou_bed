@@ -266,7 +266,7 @@ int saveImg(int sock, char *length, char *url, int urllen, char *type)
 //存储是否成功以该函数的返回值为准
 int userSave(int sock, char *content_length, char *query_by_cgi, int query_len, char *type)
 {
- 	int status = 200;
+ 	int status = 500;
 	int output[2];
 	pipe(output);
 	pid_t pid = fork();
@@ -281,18 +281,21 @@ int userSave(int sock, char *content_length, char *query_by_cgi, int query_len, 
 		sprintf(s, "sock=%d&length=%s&boundary=%s", sock, content_length, boundary);
 		printf("```````````````登录后上传图片s:%s``````````````\n", s);
 		close(output[0]);
-//		dup2(output[1], 1);   
+		dup2(output[1], 1);   
 		execl("cgi/sql_connect/user_save_img", "cgi/sql_connect/user_save_img", s, NULL);
 		perror("execl失败");
 		exit(500);
 	}
 	close(output[1]);
 	wait();
-	char tmp[200] = {0};
+	char tmp[300] = {0};
 	ssize_t s = read(output[0], tmp, sizeof(tmp));
 	tmp[s] = 0;
 	close(output[0]);
+	status = atoi(tmp);
 	printf("tmp:%s\n", tmp);
+	if(status == 200)
+		sprintf(query_by_cgi, "%s", tmp+4);
 	printf("cgi执行完毕\n");
 	return status;
 

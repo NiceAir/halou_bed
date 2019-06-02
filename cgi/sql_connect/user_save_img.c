@@ -44,7 +44,7 @@ int get_line(int sock, char buf[], int cols, int *cl)
 	return count;
 }
 
-int get_imgid(char *imgid, int len)
+int get_id(char *imgid, char *username, char *passwd, char *user_id, int len)
 {
 	MYSQL *sqlfd = mysql_init(NULL);
 	if(mysql_real_connect(sqlfd, "127.0.0.1", "root", "123", "halou_bed", 3306, NULL, 0) == NULL)
@@ -73,8 +73,37 @@ int get_imgid(char *imgid, int len)
 		return -1;
 	}
 	int maxid = atoi(line[0]);
-	mysql_close(sqlfd);
 	sprintf(imgid, "%d\0", maxid+1);
+
+
+	memset(sql, 0x00, sizeof(sql));
+	sprintf(sql, "select user_id from user where name=\'%s\' and passwd=\'%s\';", username, passwd);
+	if(mysql_query(sqlfd, sql) < 0)
+	{
+		mysql_close(sqlfd);
+		return -1;
+	}
+	res = mysql_store_result(sqlfd);
+	if(res == NULL)
+	{
+		mysql_close(sqlfd);
+		return -1;
+	}
+	MYSQL_ROW line2;
+	line2 = mysql_fetch_row(res);
+	if(line2 == NULL)
+	{
+		mysql_close(sqlfd);
+		return -1;
+	}
+	if(line2[0] == NULL)
+	{
+		mysql_close(sqlfd);
+		return -1;
+	}
+	sprintf(user_id, "%s", line2[0]);
+
+	mysql_close(sqlfd);
 	return 0;
 }
 
@@ -83,37 +112,31 @@ int get_userinfo(int sock, char *boundary, char *username, char *passwd, int *cl
 	int num = 0;
 	char line[10240];
 	num += get_line(sock, line, sizeof(line), cl);
-	printf("%s", line);
 	memset(line, 0x00, sizeof(line));
 
 	num += get_line(sock, line, sizeof(line), cl);   //Content-Disposition: form-data; name="username"\r\n\r\n
-	printf("%s", line);
 	memset(line, 0x00, sizeof(line));
 
 	num += get_line(sock, line, sizeof(line), cl);
-	printf("%s", line);
 	memset(line, 0x00, sizeof(line));
 
 	num += get_line(sock, line, sizeof(line), cl);  //第四行为用户名
-	printf("%s", line);
 	sprintf(username, "%s", line);
+	username[strlen(username)-1] = 0;
 	memset(line, 0x00, sizeof(line));
 
 	num += get_line(sock, line, sizeof(line), cl);
-	printf("%s", line);
 	memset(line, 0x00, sizeof(line));
 
 	num += get_line(sock, line, sizeof(line), cl); //Content-Disposition: form-data; name="passwd"\r\n\r\n
-	printf("%s", line);
 	memset(line, 0x00, sizeof(line));
 
 	num += get_line(sock, line, sizeof(line), cl);
-	printf("%s", line);
 	memset(line, 0x00, sizeof(line));
 
 	num += get_line(sock, line, sizeof(line), cl); //第八行为密码
-	printf("%s", line);
 	sprintf(passwd, "%s", line);
+	passwd[strlen(passwd)-1] = 0;;
 	memset(line, 0x00, sizeof(line));
 
 
@@ -126,15 +149,12 @@ int get_imgtype(int sock, char *boundary, char *type)
 	int num = 0;
 
 	num += get_line(sock, line, sizeof(line), NULL);
-	printf("%s", line);
 	memset(line, 0x00, sizeof(line));
 
 	num += get_line(sock, line, sizeof(line), NULL);
-	printf("%s", line);
 	memset(line, 0x00, sizeof(line));
 
 	num += get_line(sock, line, sizeof(line), NULL); //本行为Content-Type: image/png\r\n\r\n
-	printf("%s", line);
 
 	char *typebuf = NULL;
 	strtok(line, "/");
@@ -158,19 +178,18 @@ int get_imgtype(int sock, char *boundary, char *type)
 
 
 	num += get_line(sock, line, sizeof(line), NULL);
-	printf("%s", line);
 	memset(line, 0x00, sizeof(line));
 
 	return num;
 }
 
-int save_img(sock, img_len, path)
+int save_img(int sock, int img_len, char *path)
 {
 	char c;
 	char *buf = (char *)malloc(sizeof(char)*img_len+1);
 	int count = 0;
 	if(buf == NULL)
-		return -1;
+		return 0;
 	while(count < img_len)
 	{   
 		ssize_t ss = read(sock, &c, 1); 
@@ -190,12 +209,12 @@ int save_img(sock, img_len, path)
 	int fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if(fd < 0)
 	{
-		return -1;
+		return 0;
 	}
-	write(fd, buf, body_len);
+	write(fd, buf, img_len);
 	close(fd);
 	
-	return 0;
+	return 1;
 }
 int main(int argc, char *argv[])
 {
@@ -206,25 +225,26 @@ int main(int argc, char *argv[])
 	int length = atoi(strtok(NULL, "=&"));
 	strtok(NULL, "=&");
 	char *boundary = strtok(NULL, "=&");
-	printf("存图片的cgi中，sock：%d, length:%d, boundary:%s\n", sock, length, boundary);
 	char type[20] = {0};   //图片类型
 	int cl = 1;  //传入get_len中取得换行符所占的字节数
 	int num =  0;
 	char username[100] = {0};
 	char passwd[100] = {0};
+	int status = 200;
 	num += get_userinfo(sock, boundary, username, passwd, &cl);
 	num += get_imgtype(sock, boundary, type);
 	int front_len = num + 12;
 	int tail_len = strlen(boundary) + 8;   //最后一行为 \r\n--boundary--\r\n
 	int img_len = length - front_len - tail_len;
-	printf("图片的大小为：%d\n", img_len);
 
-	char imgname[40] = {0};
-	char imgid[21] = {0};
 	char path[1024] = IMGPATH;
-	int res = get_imgid(imgid, 20);
+	char imgname[21] = {0};
+	char imgid[21] = {0};
+	char userid[21] = {0};
+	int res = get_id(imgid, username, passwd, userid, 20);
 	if(res == -1) 
 	{   
+		status = 500;
 		goto end;
 	}   
 	strcat(imgname, "baobao");
@@ -241,32 +261,49 @@ int main(int argc, char *argv[])
 	}   
 	strcat(imgname, type);
 	strcat(path, imgname);
-	printf("path:%s\n", path);
+
+	if(save_img(sock, img_len, path) != 1)
+	{
+		status = 500;
+		goto end;
+	}
+
+	int count = 0;
+	while(count < tail_len)
+	{
+		char c;
+		ssize_t s = read(sock, &c, 1);
+		if(s < 0)
+		{
+			if(errno == EAGAIN || errno == EWOULDBLOCK)
+				continue;
+			else 
+				break;
+		}
+		count++;
+	}
 
 
-
-	int  = save_img(sock, img_len, path);
-
-	//	MYSQL *sqlfd = mysql_init(NULL);
-	//	if(mysql_real_connect(sqlfd, "127.0.0.1", "root", "123", "halou_bed", 3306, NULL, 0) == NULL)
-	//	{
-	//    	mysql_close(sqlfd);
-	//		goto end;
-	//	}
-	//	char sql[1024] = {0};
-	//
-	//	//这里的path是图片在服务器上的相对路径
-	//	sprintf(sql, "insert into %s(path, user_id) values('%s', %d)", TABLE, path, 0);
-	//	if(mysql_query(sqlfd, sql) < 0)
-	//	{
-	//		mysql_close(sqlfd);
-	//		goto end;
-	//	}
-	//	mysql_close(sqlfd);
-	//	status_code = 200;
+	MYSQL *sqlfd = mysql_init(NULL);
+	if(mysql_real_connect(sqlfd, "127.0.0.1", "root", "123", "halou_bed", 3306, NULL, 0) == NULL)
+	{
+		mysql_close(sqlfd);
+		status = 500;
+		goto end;
+	}
+	char sql[1024] = {0};
+	
+	//这里的path是图片在服务器上的相对路径
+	sprintf(sql, "insert into %s(path, user_id) values('%s', '%s')", TABLE, path, userid);
+	if(mysql_query(sqlfd, sql) < 0)
+	{
+		mysql_close(sqlfd);
+		status = 500;
+		goto end;
+	}
+	mysql_close(sqlfd);
 end:	
-	//	//返回给父进程该图片的路径和状态码即可
-	//	printf("%s&%d", path, status_code);
+	printf("%d&%s&%s&%s", status, path, username, passwd);
 	fflush(stdout);
 	exit(0);
 }
