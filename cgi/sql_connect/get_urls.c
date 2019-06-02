@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
 	 select image.path, image.user_id
 	 from image where image.user_id=(select user_id from user where name='q');
 	 */
-	sprintf(sql, "select image.path from image where image.user_id=(select user_id from user where name='%s');", username); 
+	sprintf(sql, "select image.path from image where image.user_id=(select user_id from user where name='%s') order by id desc;", username); 
 	if(mysql_query(sqlfd, sql) < 0)
 	{
 		mysql_close(sqlfd);

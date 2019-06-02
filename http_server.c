@@ -852,12 +852,13 @@ void echo_www_register(int sock)
 }
 
 //urls:用户所上传的图片url
-void echo_www_loged(int sock, char *username, char *urls)
+void echo_www_loged(int sock, char *username, char *passwd, char *urls)
 {
 	char show_user[150] = {0};
 	char line[4096] = {0};
 	char page[] = "wwwroot/user_index.html";
 	int num_url = 0;         //图片的数量
+	char str_tip[] = "<h2> 第一个url为您最近上传的图片</h2>\r\n";
 	printf("echo_www_loged获得参数，sock=%d, username:%s, urls:%s\n", sock, username, urls);
 	char source[] = "<input class=\"wow fadeInRight\" data-wow-delay=\"0.5s\" type=\"text\" value=\"\" name=\"我的图片\"/><br>\r\n";
 	sprintf(show_user, "<li><a href=\"#\" name=\"user\">你好，亲爱的%s</a></li>\r\n", username);
@@ -877,6 +878,9 @@ void echo_www_loged(int sock, char *username, char *urls)
 	}
 	all_len += len;
 	all_len += strlen(username);
+	all_len += strlen(username);
+	if(passwd != NULL)
+		all_len += strlen(passwd);
 	if(urls != NULL)
 	{
 		num_url = 1;   //urls不为空，则至少有一个图片
@@ -888,6 +892,7 @@ void echo_www_loged(int sock, char *username, char *urls)
 		}
 		all_len = all_len + strlen(urls) - (num_url-1);
 		all_len =  all_len + (num_url-1)*strlen(source); //文件中本身就有一个source，所以减1
+		all_len += strlen(str_tip);
 	}
 	sprintf(line, "Content-Length: %d\r\n\r\n", all_len);
 	write(sock, line, strlen(line));
@@ -899,6 +904,8 @@ void echo_www_loged(int sock, char *username, char *urls)
 	int num = 0;          //已发送的字符串数量
 	int sign1 = 0;        //标志着是否已发送用户名，0为还没发
 	int sign2 = 0;        //标志着是否已发送图片url，0为还没发
+	int sign3 = 0;        //标志着是否已经发送隐藏表单域中的用户名密码, 0为还没发
+	int sign4 = 0;        //标志着是否已经发送“最新图片”的提示信息， 0为还没发
 	while(fgets(line, sizeof(line), fp) != NULL)
 	{
 		if(sign1 == 0)
@@ -939,6 +946,45 @@ void echo_www_loged(int sock, char *username, char *urls)
 				continue;
 			}
 		}
+		if(sign3 == 0)
+		{
+			char str1[] = "<input type=\"hidden\" name=\"username\" value=\"\">\r\n";
+			char str2[] = "<input type=\"hidden\" name=\"passwd\" value=\"\">\r\n";
+			if(strncasecmp(line, str1, strlen(str1)) == 0)
+			{
+				char show_name[400] = {0};
+				sprintf(show_name, "<input type=\"hidden\" name=\"username\" value=\"%s\">\r\n", username);
+				write(sock, show_name, strlen(show_name));
+				num += strlen(show_name);
+				memset(line, 0x00, sizeof(line));
+				continue;
+			}
+			if(strncasecmp(line, str2, strlen(str2)) == 0)
+			{
+				char show_passwd[400] = {0};
+				sprintf(show_passwd, "<input type=\"hidden\" name=\"passwd\" value=\"%s\">\r\n", passwd);
+				write(sock, show_passwd, strlen(show_passwd));
+				num += strlen(show_passwd);
+				memset(line, 0x00, sizeof(line));
+				sign3 = 1;
+				continue;
+			}
+		}
+		if(sign4 == 0 && urls != NULL)
+		{
+			char str[] = "<h1> <label>您的图片</label></h1>\r\n";
+			if(strncasecmp(line, str, strlen(str)) == 0)
+			{
+				write(sock, line, strlen(line));
+				num += strlen(line);
+				write(sock, str_tip, strlen(str_tip));
+				num += strlen(str_tip);
+				memset(line, 0x00, sizeof(line));
+				sign4 = 1;
+				continue;
+			}
+		}
+
 		write(sock, line, strlen(line));
 		num += strlen(line);
 		memset(line, 0x00, sizeof(line));
@@ -952,7 +998,7 @@ void echo_www_loged(int sock, char *username, char *urls)
 void echo_www_loged_with_register(int sock, char *username)
 { 
 	printf("echo_www_loged 获得参数，sock:%d, username:%s\n", sock, username);
-	echo_www_loged(sock, username, NULL);
+	echo_www_loged(sock, username, NULL, NULL);
 }
 
 /*
@@ -990,25 +1036,24 @@ int get_urls_by_name(char *query_string, int query_len, char *username)
 //然后拼接echo_www_loged需要的参数形式
 void echo_www_loged_with_log(int sock, char *path)
 {
-	char cooike[33] = {0};
+	char passwd[33] = {0};
 	char username[30] = {0};
 	char urls[1024] = {0};     //传入get_url_by_name中获得用户上传图片的URL
 	printf("echo_www_loged_with_log 获得参数，sock:%d, path:%s\n", sock, path);
-	strtok(path, "&");
-	sprintf(cooike, "%s", strtok(NULL, "&"));
-	sprintf(username, "%s", strtok(NULL, "&"));
-	printf("cooike:%s   username:%s\n", cooike, username);
+	sprintf(username, "%s", strtok(path, "&"));
+	sprintf(passwd, "%s", strtok(NULL, "&"));
+	printf("username:%s   passwd:%s\n", username, passwd);
 	int status = get_urls_by_name(urls, sizeof(urls), username);
 	printf("get_urls_by_name的返回结果为：%d     %s", status, urls);
-	if(status == 500)
+	if(status == 500)      //用户没有上传过图片
 	{
-		echo_www_loged(sock, username, NULL);
+		echo_www_loged(sock, username, passwd,  NULL);
 	}
-	else
+	else   //用户有图片
 	{	
 		int len = strlen(urls);	
 		urls[len-1] = 0;
-		echo_www_loged(sock, username, urls+1);
+		echo_www_loged(sock, username, passwd, urls+1);
 	}
 }
 
@@ -1048,12 +1093,19 @@ void login_response(int sock, char *path)
 	}
 	else if(strncmp(path, "登录成功", 4*3) == 0)
 	{
-		echo_www_loged_with_log(sock, path);
+		echo_www_loged_with_log(sock, path+4*3+1);
 	}
 	else
 	{
 		echo_www(sock, PAGE_400, 200);
 	}
+}
+
+
+void userSave_response(int sock, char *path)
+{
+	printf("userSave_response获得参数, sock=%d  path:%s\n", sock, path);
+	echo_www_loged_with_log(sock, path);
 }
 
 void handler_response(int epfd, int sock)
@@ -1153,6 +1205,10 @@ void handler_response(int epfd, int sock)
 			response_code = 203;
 			
 		}
+		else if(strcmp(url, "/log_about/save") == 0)
+		{
+			response_code = 204;
+		}
 		else
 		{
 			status_code = 400;
@@ -1185,6 +1241,10 @@ void handler_response(int epfd, int sock)
 		if(response_code == 203)
 		{
 			login_response(sock, path);
+		}
+		if(response_code == 204)
+		{
+			userSave_response(sock, path);
 		}
 
 	}

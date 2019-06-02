@@ -46,7 +46,7 @@ else          //找到了，登录成功
 {
 	
 	$cooike = md5(time());
-	echo "200&登录成功&" . $cooike . "&" . $username;
+	echo "200&登录成功&" . $username . "&" . $passwd;
 }
 $conn->close();
 exit();

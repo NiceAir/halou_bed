@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
 	}
 	mysql_close(sqlfd);
 end:	
-	printf("%d&%s&%s&%s", status, path, username, passwd);
+	printf("%d&%s&%s", status, username, passwd);
 	fflush(stdout);
 	exit(0);
 }
