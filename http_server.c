@@ -262,6 +262,43 @@ int saveImg(int sock, char *length, char *url, int urllen, char *type)
 	return status;
 }
 
+//需要往传出参数query_by_cgi里写的是图片的url、用户名
+//存储是否成功以该函数的返回值为准
+int userSave(int sock, char *content_length, char *query_by_cgi, int query_len, char *type)
+{
+ 	int status = 200;
+	int output[2];
+	pipe(output);
+	pid_t pid = fork();
+	if(pid < 0)
+		return 500;
+	if(pid == 0)
+	{
+		char s[200] = {0};
+		char *boundary = NULL;
+		strtok(type, "=");
+		boundary = strtok(NULL, "=");
+		sprintf(s, "sock=%d&length=%s&boundary=%s", sock, content_length, boundary);
+		printf("```````````````登录后上传图片s:%s``````````````\n", s);
+		close(output[0]);
+//		dup2(output[1], 1);   
+		execl("cgi/sql_connect/user_save_img", "cgi/sql_connect/user_save_img", s, NULL);
+		perror("execl失败");
+		exit(500);
+	}
+	close(output[1]);
+	wait();
+	char tmp[200] = {0};
+	ssize_t s = read(output[0], tmp, sizeof(tmp));
+	tmp[s] = 0;
+	close(output[0]);
+	printf("tmp:%s\n", tmp);
+	printf("cgi执行完毕\n");
+	return status;
+
+}
+
+
 /*
 s: 缓存区 slen：缓存区的大小
 length: 需要读取的字节数
@@ -531,6 +568,11 @@ void handler_request(int epfd, int sock)
 		{
 			printf("用户登录，sock=%d, url=%s, content_length=%s, type=%s\n", sock, url, content_length, type);
 			status_code = userLogin(sock, content_length, query_by_cgi, sizeof(query_by_cgi)); //登录结果只有两种：登录成功和登录失败
+		}
+		else if(strcmp(url, "/log_about/save") == 0)
+		{
+			printf("登录后上传图片，sock=%d, url=%s, content_length=%s, type=%s\n", sock, url, content_length, type);
+			status_code = userSave(sock, content_length, query_by_cgi, sizeof(query_by_cgi), type);
 		}
 		else   //POST 的url未知，返回404页面
 		{

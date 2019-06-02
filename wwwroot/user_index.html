@@ -77,6 +77,8 @@ function check(){
 	<!--
 	-->		
 			<form enctype='multipart/form-data' method="post" action="save" onsubmit="return check()">
+<input type="hidden" name="username" value="呵呵">
+<input type="hidden" name="passwd" value="123">
 				<div>
 					<div class="fileinput fileinput-new" data-provides="fileinput"  id="exampleInputUpload">
 						<div class="fileinput-new thumbnail" style="width: 200px;height: auto;max-height:150px;">
@@ -93,8 +95,6 @@ function check(){
 						</div>
 					</div>
 				</div>
-<input type="hidden" name="username" value="哈哈">
-<input type="hidden" name="passwd" value="123">
 				<button type="submit"  class="btn btn-info">提交</button>
 				
 			</form>
