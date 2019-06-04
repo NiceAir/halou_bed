@@ -2,7 +2,7 @@
 CURR_PATH=$(shell pwd)
 LIB=$(CURR_PATH)/../../lib
 INCLUDE=$(LIB)/include
-MYSQL_LIB=$(LIB)/lib -lmysqlclient -lssl -lcrypto
+MYSQL_LIB=$(LIB)/lib -lmysqlclient
 .PHONY: all
 all: save_img get_id get_urls user_save_img
 

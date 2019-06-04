@@ -15,7 +15,7 @@
 #include<arpa/inet.h>
 #include<fcntl.h>
 #define PORT 9999
-#define IP "192.168.1.100"
+#define IP "120.79.49.217"
 #define MAX_EVENTS 30
 #define MAX_COLS 4096
 #define HOME_PAGE "index.html"
@@ -1056,6 +1056,7 @@ void echo_www_loged_with_log(int sock, char *path)
 	{	
 		int len = strlen(urls);	
 		urls[len-1] = 0;
+		printf("用户登录后上传图片\n");
 		echo_www_loged(sock, username, passwd, urls+1);
 	}
 }

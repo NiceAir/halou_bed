@@ -218,7 +218,6 @@ int save_img(int sock, int img_len, char *path)
 }
 int main(int argc, char *argv[])
 {
-	int status_code = 500;
 	strtok(argv[1], "=&");
 	int sock = atoi(strtok(NULL, "=&"));
 	strtok(NULL, "=&");
@@ -245,6 +244,7 @@ int main(int argc, char *argv[])
 	if(res == -1) 
 	{   
 		status = 500;
+	//	printf("1111111111111111111\n");
 		goto end;
 	}   
 	strcat(imgname, "baobao");
@@ -265,6 +265,7 @@ int main(int argc, char *argv[])
 	if(save_img(sock, img_len, path) != 1)
 	{
 		status = 500;
+	//	printf("2222222222222222222\n");
 		goto end;
 	}
 
@@ -289,6 +290,7 @@ int main(int argc, char *argv[])
 	{
 		mysql_close(sqlfd);
 		status = 500;
+	//	printf("3333333333333333333\n");
 		goto end;
 	}
 	char sql[1024] = {0};
@@ -299,6 +301,7 @@ int main(int argc, char *argv[])
 	{
 		mysql_close(sqlfd);
 		status = 500;
+	//	printf("4444444444444444444\n");
 		goto end;
 	}
 	mysql_close(sqlfd);
