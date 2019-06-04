@@ -4,10 +4,13 @@
 #include<string.h>
 #include<ctype.h>
 #include<errno.h>
+#include<sys/time.h>
 #include<sys/types.h>
 #include<sys/socket.h>
 #include<sys/epoll.h>
+#include<sys/wait.h>
 #include<sys/stat.h>
+#include<sys/sendfile.h>
 #include<netinet/in.h>
 #include<arpa/inet.h>
 #include<fcntl.h>
@@ -240,7 +243,7 @@ int saveImg(int sock, char *length, char *url, int urllen, char *type)
 	close(output[1]);
 	memset(url, 0x00, urllen);
 	char c;
-	wait();
+	wait(NULL);
 	ssize_t s = read(output[0], url, urllen);
 	url[s] = 0;
 	int i = 0;
@@ -287,7 +290,7 @@ int userSave(int sock, char *content_length, char *query_by_cgi, int query_len, 
 		exit(500);
 	}
 	close(output[1]);
-	wait();
+	wait(NULL);
 	char tmp[300] = {0};
 	ssize_t s = read(output[0], tmp, sizeof(tmp));
 	tmp[s] = 0;
@@ -363,7 +366,7 @@ int userRegister(int sock, char *content_length, char *url, int urllen)
 	close(output[1]);
 	memset(url, 0x00, urllen);
 	char c;
-	wait();
+	wait(NULL);
 	ssize_t s = read(output[0], url, urllen);
 	url[s] = 0;
 	int i = 0;
@@ -407,7 +410,7 @@ int getId()
 		ssize_t s = read(output[0], tmp, sizeof(tmp));
 		tmp[s] = 0;
 		id = atoi(tmp);
-		wait();
+		wait(NULL);
 		close(output[0]);
 	}
 	if(id < 0)
@@ -441,7 +444,7 @@ int userLogin(int sock, char * content_length, char *query_by_cgi, int query_len
 		exit(1);
 	}
 	close(output[1]);
-	wait();
+	wait(NULL);
 	char tmp[400] = {0};   //临时接收cgi的返回结果，其中状态码为3位,cooike为32位
 	size_t s = read(output[0], tmp, sizeof(tmp));
 	tmp[s] = 0;
@@ -597,7 +600,7 @@ set:
 	{
 		epoll_ctl(epfd, EPOLL_CTL_DEL, sock, NULL);
 		close(sock);
-		printf("sock为%d的链接导入参数失败\n");
+		printf("sock为%d的链接导入参数失败\n", sock);
 		return;
 	}
 	//show_time();
@@ -692,7 +695,7 @@ int echo_www(int sock, char *path, int status_code)
 //		sendfile(sock, fd, NULL, st.st_size);
 		size_t num = 0;       //已发送的字符数
 		size_t need = st.st_size;   //还需发送的字符数
-		printf("start sendfile sock=%d  fd=%d  need=%d\n", sock, fd, need);
+		printf("start sendfile sock=%d  fd=%d  need=%d\n", sock, fd, (int)need);
 		while(need > 0 )
 		{
 
@@ -706,7 +709,7 @@ int echo_www(int sock, char *path, int status_code)
 			}
 			need -= send_num;
 		}
-		printf("end sendfile sock=%d  fd=%d  num=%d need=%d\n", sock, fd, num, need);
+		printf("end sendfile sock=%d  fd=%d  num=%d need=%d\n", sock, fd, num, (int)need);
 	}
 	else
 	{
@@ -1021,7 +1024,7 @@ int get_urls_by_name(char *query_string, int query_len, char *username)
 		exit(500);
 	}
 	close(output[1]);
-	wait();
+	wait(NULL);
 	char tmp[1024] = {0};
 	ssize_t s = read(output[0], tmp, sizeof(tmp));
 	tmp[s] = 0;
@@ -1311,8 +1314,8 @@ int main(int argc, char *argv[])
 	struct sockaddr_in local;
 	local.sin_family = AF_INET;   //类型
 	local.sin_port = htons(PORT);  //端口号
-//	local.sin_addr.s_addr = INADDR_ANY;  //ip地址
-	local.sin_addr.s_addr = inet_addr(IP);  //ip地址
+	local.sin_addr.s_addr = INADDR_ANY;  //ip地址
+//	local.sin_addr.s_addr = inet_addr(IP);  //ip地址
 	if(set_noblock(sock) < 0)
 	{
 		perror("fcntl");
