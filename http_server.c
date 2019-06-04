@@ -486,7 +486,7 @@ void handler_request(int epfd, int sock)
 		url[i++] = line[j++];
 	}
 	url[i] = '\0';
-	if(strcasecmp(method, "GET") == 0)
+	if(strcasecmp(method, "GET") == 0 || strcasecmp(method, "HEAD") == 0)
 	{
 		for(i = 0; i<strlen(url); i++)
 		{
@@ -1133,7 +1133,7 @@ void handler_response(int epfd, int sock)
 		status_code = 500;
 		goto error;
 	}
-	else if(strcasecmp(method, "get") == 0) //get方法
+	else if(strcasecmp(method, "get") == 0 || strcasecmp(method, "HEAD") == 0) //get方法
 	{
 		if(strcmp(query_string, "\0") != 0)    //get方法带参数，即要执行服务器程序
 		{
