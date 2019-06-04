@@ -1,0 +1,65 @@
+**************************************进入主页开始*******************************
+**************************************进入主页结束*******************************
+
+**************************************进入登录页开始*******************************
+log login.sh login.txt register.sh register.txt start.sh test.sh 进入登录页结束*******************************
+
+**************************************进入注册页开始*******************************
+**************************************进入注册页结束*******************************
+
+**************************************请求图片开始*****************************
+**************************************请求图片结束*******************************
+
+**************************************用户登录开始*******************************
+This is ApacheBench, Version 2.3 <$Revision: 1430300 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking 192.168.1.107 (be patient).....done
+
+
+Server Software:        
+Server Hostname:        192.168.1.107
+Server Port:            9999
+
+Document Path:          /log_about/login
+Document Length:        6639 bytes
+
+Concurrency Level:      100
+Time taken for tests:   2.386 seconds
+Complete requests:      100
+Failed requests:        0
+Write errors:           0
+Keep-Alive requests:    0
+Total transferred:      672400 bytes
+Total body sent:        22200
+HTML transferred:       663900 bytes
+Requests per second:    41.92 [#/sec] (mean)
+Time per request:       2385.536 [ms] (mean)
+Time per request:       23.855 [ms] (mean, across all concurrent requests)
+Transfer rate:          275.26 [Kbytes/sec] received
+                        9.09 kb/s sent
+                        284.35 kb/s total
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0  432 499.2      1    1004
+Processing:    23  725 301.5    576    1359
+Waiting:       22  725 301.5    576    1359
+Total:         23 1157 740.8    576    2362
+
+Percentage of the requests served within a certain time (ms)
+  50%    576
+  66%   1687
+  75%   1750
+  80%   1785
+  90%   2300
+  95%   2335
+  98%   2355
+  99%   2362
+ 100%   2362 (longest request)
+**************************************用户登录结束*******************************
+
+**************************************用户注册开始*******************************
+**************************************用户注册结束*******************************
+

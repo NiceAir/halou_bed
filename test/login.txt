@@ -1,0 +1,1 @@
+username=哈哈&passwd=123

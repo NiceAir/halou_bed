@@ -12,7 +12,7 @@
 #include<arpa/inet.h>
 #include<fcntl.h>
 #define PORT 9999
-#define IP "192.168.1.103"
+#define IP "192.168.1.100"
 #define MAX_EVENTS 30
 #define MAX_COLS 4096
 #define HOME_PAGE "index.html"
